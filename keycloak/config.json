@@ -1,0 +1,103 @@
+{
+  "realm": {
+    "name": "mcp-realm",
+    "displayName": "MCP Server Realm",
+    "enabled": true,
+    "accessTokenLifespan": 3600,
+    "accessTokenLifespanForImplicitFlow": 1800,
+    "ssoSessionIdleTimeout": 3600,
+    "ssoSessionMaxLifespan": 72000,
+    "offlineSessionIdleTimeout": 2592000
+  },
+  "clients": [
+    {
+      "clientId": "mcp-server-client",
+      "name": "MCP Server Client",
+      "type": "confidential",
+      "enabled": true,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "clientSecret": "mcp-secret-key-change-me",
+      "assignedScopes": {
+        "default": ["openid", "profile", "email"],
+        "optional": ["mcp:read", "mcp:tools", "mcp:prompts"]
+      }
+    },
+    {
+      "clientId": "mcp-test-client",
+      "name": "MCP Test Client",
+      "type": "public",
+      "enabled": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:3000/callback"],
+      "webOrigins": ["http://localhost:3000"],
+      "assignedScopes": {
+        "default": ["openid", "profile", "email"],
+        "optional": ["mcp:read", "mcp:tools", "mcp:prompts"]
+      }
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "mcp:read",
+      "description": "Read access to MCP resources",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
+      "name": "mcp:tools",
+      "description": "Access to execute MCP tools",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
+      "name": "mcp:prompts",
+      "description": "Access to MCP prompts",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "mcp-admin",
+      "email": "admin@mcp.example.com",
+      "firstName": "MCP",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "password": "admin123",
+      "temporary": false
+    },
+    {
+      "username": "mcp-user",
+      "email": "user@mcp.example.com",
+      "firstName": "MCP",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "password": "user123",
+      "temporary": false
+    },
+    {
+      "username": "mcp-readonly",
+      "email": "readonly@mcp.example.com",
+      "firstName": "MCP",
+      "lastName": "ReadOnly",
+      "enabled": true,
+      "emailVerified": true,
+      "password": "readonly123",
+      "temporary": false
+    }
+  ]
+} 
