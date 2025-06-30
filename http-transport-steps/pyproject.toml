@@ -1,0 +1,26 @@
+[project]
+name = "mcp-http"
+version = "0.1.0"
+description = "MCP Authentication Step by Step Tutorial"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "mcp>=1.1.3",
+]
+
+[project.scripts]
+step1 = "mcp_http.step1:main"
+step2 = "mcp_http.step2:main"
+step3 = "mcp_http.step3:main"
+step4 = "mcp_http.step4:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_http"]
+
+[tool.uv]
+dev-dependencies = ["pyright>=1.1.389", "ruff>=0.7.3"] 
