@@ -19,6 +19,7 @@ step4 = "mcp_http.step4:main"
 step5 = "mcp_http.step5:main"
 step6 = "mcp_http.step6:main"
 step7 = "mcp_http.step7:main"
+step8 = "mcp_http.step8:main"
 
 [build-system]
 requires = ["hatchling"]

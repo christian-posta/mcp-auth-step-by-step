@@ -1,0 +1,23 @@
+{
+  "username": "guest",
+  "scopes": [
+    ""
+  ],
+  "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Im1jcC1rZXktMSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJtY3Atc2ltcGxlLWF1dGgiLCJhdWQiOiJtY3Atc2VydmVyIiwic3ViIjoidXNlcl9ndWVzdCIsImlhdCI6MTc1MTMyNjIxOCwiZXhwIjoxNzUxMzI5ODE4LCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJndWVzdCIsInNjb3BlIjoiIiwic2NvcGVzIjpbIiJdLCJyb2xlcyI6WyJ1c2VyIl19.KIiMWIbdV7WxCLWufMOou7RGQoPMzNWVE0mczLOPA0rNh39PnvqD2l29mGJJn2fqXv-QOCXEH1N1f5eWXh0mstYlDv--6KPknlCwG4hcUR5YXXnx4pvoNxYD5onSW94XJWiFpQqDkiMUgTsid7B0IlGRIS1VMuPL1HW6Z2yz29mw2OtJqq1cyDOTaJSFOxvSGtGozbYx8Od237xfXISepJGjgERKWoDKhjnRFhckg4PNQl08chF5BGiXjNsw5lr-mUnLGj1QQxMSyQfe_CptlvSjNNyVPtchYYYaGHNY46Ny6vDlqXJ0AuPtg4PtYGFlJQ2OPpvemFcooo-OrA2h3g",
+  "payload": {
+    "iss": "mcp-simple-auth",
+    "aud": "mcp-server",
+    "sub": "user_guest",
+    "iat": 1751326218,
+    "exp": 1751329818,
+    "preferred_username": "guest",
+    "scope": "",
+    "scopes": [
+      ""
+    ],
+    "roles": [
+      "user"
+    ]
+  },
+  "expires_at": "2025-06-30T17:30:18"
+}

@@ -1,0 +1,25 @@
+{
+  "username": "bob",
+  "scopes": [
+    "mcp:read",
+    "mcp:prompts"
+  ],
+  "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Im1jcC1rZXktMSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJtY3Atc2ltcGxlLWF1dGgiLCJhdWQiOiJtY3Atc2VydmVyIiwic3ViIjoidXNlcl9ib2IiLCJpYXQiOjE3NTEzMjYyMTgsImV4cCI6MTc1MTMyOTgxOCwicHJlZmVycmVkX3VzZXJuYW1lIjoiYm9iIiwic2NvcGUiOiJtY3A6cmVhZCBtY3A6cHJvbXB0cyIsInNjb3BlcyI6WyJtY3A6cmVhZCIsIm1jcDpwcm9tcHRzIl0sInJvbGVzIjpbInVzZXIiXX0.QVnXQTrjPLdtkEXKeYqHYTXD5I0izm3hsPxuXTClcqZJyR6k-Gw50dt4bamVPM09INI_pgPXZJbikRLEwPc8d-efCyv1VupDa72S8eFj9SlgzJYEAU3vdmnGHnvCQIwghbo00rGwEVtpQehtHtRWPcwQmvvZ75KXrnYVDZucO475Ia76ivYVC1TJx9Z8k7XDTnEbR17ve_dvqeqzRdjOo-_zADHO-uYV1NchcWheiVxYM0A_LP_US295321ZZDOjRZ0992Ik1GVZa-xGnHbErmGLD4r4UpAsTyZU_CSqYC3X0mF29H8-Jby6qeTurwEu3lV2oVnRY4hmaxREFVVFiQ",
+  "payload": {
+    "iss": "mcp-simple-auth",
+    "aud": "mcp-server",
+    "sub": "user_bob",
+    "iat": 1751326218,
+    "exp": 1751329818,
+    "preferred_username": "bob",
+    "scope": "mcp:read mcp:prompts",
+    "scopes": [
+      "mcp:read",
+      "mcp:prompts"
+    ],
+    "roles": [
+      "user"
+    ]
+  },
+  "expires_at": "2025-06-30T17:30:18"
+}
