@@ -20,7 +20,7 @@ trap cleanup EXIT INT TERM
 # Check if public key exists, if not generate one
 if [ ! -f "mcp_public_key.pem" ]; then
     echo "🔑 No public key found, generating key pair..."
-    python generate_token.py --generate-keys
+    uv run python generate_token.py --generate-keys
     if [ $? -ne 0 ]; then
         echo "❌ Failed to generate key pair"
         exit 1

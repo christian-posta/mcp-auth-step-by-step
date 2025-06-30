@@ -1,0 +1,28 @@
+{
+  "username": "admin",
+  "scopes": [
+    "mcp:read",
+    "mcp:tools",
+    "mcp:prompts"
+  ],
+  "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Im1jcC1rZXktMSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJtY3Atc2ltcGxlLWF1dGgiLCJhdWQiOiJtY3Atc2VydmVyIiwic3ViIjoidXNlcl9hZG1pbiIsImlhdCI6MTc1MTMyNTM4NiwiZXhwIjoxNzUxMzI4OTg2LCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbiIsInNjb3BlIjoibWNwOnJlYWQgbWNwOnRvb2xzIG1jcDpwcm9tcHRzIiwic2NvcGVzIjpbIm1jcDpyZWFkIiwibWNwOnRvb2xzIiwibWNwOnByb21wdHMiXSwicm9sZXMiOlsidXNlciIsImFkbWluIl19.wTVKCmSCc13rpMVhEaluzwcTXwato88qALYCyvcpfP7wLmzHfQeneP9xeYU9lMmm2LSzONYeyEn0ngeE9gJrFx0ty-PUESO2MFvu9lgo1n0QVau21nKdIAEt7KJVpg44SjTxJ0oPtm0dXsN0Mp2YhbbNJNHg7jQOrPxfvhAG1x_9_I8O_kBoFaU6g2MhLMpVGSQnDKfocRT_weYbODlRpY40D3sFKPubndGQBpqtUR7S7aFF7rNmYErLwCFl3-irEdfn7voYf3SQPypPbh_ptgj3ws74bBsX0ZS1UQapzCEj_X_f0W2GojR-azR6NySwcXp6oxd0LX65Xzlr8_w5mw",
+  "payload": {
+    "iss": "mcp-simple-auth",
+    "aud": "mcp-server",
+    "sub": "user_admin",
+    "iat": 1751325386,
+    "exp": 1751328986,
+    "preferred_username": "admin",
+    "scope": "mcp:read mcp:tools mcp:prompts",
+    "scopes": [
+      "mcp:read",
+      "mcp:tools",
+      "mcp:prompts"
+    ],
+    "roles": [
+      "user",
+      "admin"
+    ]
+  },
+  "expires_at": "2025-06-30T17:16:26"
+}
