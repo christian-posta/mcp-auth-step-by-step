@@ -263,6 +263,15 @@ class JWTMCPServer:
                 }
             }
         
+        @self.app.get("/mcp")
+        async def handle_mcp_get(request: Request):
+            """Handle GET requests to MCP endpoint."""
+            return JSONResponse(content={
+                "server": "mcp-echo",
+                "transport": "streamable-http",
+                "version": "0.1.0"
+            })
+        
         @self.app.post("/mcp")
         async def handle_mcp_request(
             request: Request,
@@ -306,7 +315,9 @@ class JWTMCPServer:
                     if not self.check_permission(scopes, roles, "tools", "read"):
                         return self.forbidden_response("Insufficient permissions for tools access")
                     tools = await list_tools()
-                    result = [tool.model_dump() for tool in tools]
+                    result = {
+                        "tools": [tool.model_dump() for tool in tools]
+                    }
                 elif mcp_request.method == "tools/call":
                     if not self.check_permission(scopes, roles, "tools", "execute"):
                         return self.forbidden_response("Insufficient permissions for tool execution")
@@ -319,12 +330,14 @@ class JWTMCPServer:
                     if not self.check_permission(scopes, roles, "prompts", "read"):
                         return self.forbidden_response("Insufficient permissions for prompts access")
                     prompts = await list_prompts()
-                    result = [prompt.model_dump() for prompt in prompts]
+                    result = {
+                        "prompts": [prompt.model_dump() for prompt in prompts]
+                    }
                 elif mcp_request.method == "prompts/get":
                     if not self.check_permission(scopes, roles, "prompts", "read"):
                         return self.forbidden_response("Insufficient permissions for prompts access")
-                    result = await get_prompt(mcp_request.params["name"], mcp_request.params.get("arguments"))
-                    result = result.model_dump()
+                    prompt_result = await get_prompt(mcp_request.params["name"], mcp_request.params.get("arguments"))
+                    result = prompt_result.model_dump()
                 elif mcp_request.method == "ping":
                     result = {
                         "pong": True,
@@ -348,7 +361,25 @@ class JWTMCPServer:
 
         @self.server.list_tools()
         async def list_tools() -> List[Tool]:
-            return [Tool(name="echo", description="Echo a message", inputSchema=EchoRequest.model_json_schema())]
+            return [Tool(
+                name="echo", 
+                description="Echo a message", 
+                title="Echo Tool",
+                inputSchema=EchoRequest.model_json_schema(),
+                outputSchema={
+                    "type": "object",
+                    "properties": {
+                        "text": {"type": "string", "description": "The echoed message"}
+                    }
+                },
+                annotations={
+                    "title": "Echo Tool",
+                    "readOnlyHint": False,
+                    "destructiveHint": False,
+                    "idempotentHint": True,
+                    "openWorldHint": False
+                }
+            )]
 
         @self.server.call_tool()
         async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
