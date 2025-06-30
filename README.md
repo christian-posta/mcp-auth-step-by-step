@@ -111,9 +111,33 @@ Each step includes a corresponding test script (`test_stepX.sh`) that validates:
 
 ## Usage
 
-1. Navigate to the `http-transport-steps` directory
-2. Run the desired step: `python -m src.mcp_http.stepX`
-3. Use the corresponding test script: `./test_stepX.sh`
+### Prerequisites
+1. Install `uv`: https://docs.astral.sh/uv/getting-started/installation/
+2. Navigate to the `http-transport-steps` directory
+
+### Running Steps with uv
+
+
+```bash
+# Run any step using uv run
+uv run step1
+uv run step2
+uv run step3
+# ... etc
+```
+
+### Token Generation
+
+For steps 5-8 that require JWT authentication, you can generate tokens using the `generate_token.py` script:
+
+```bash
+uv run python generate_token.py --username alice --scopes mcp:read,mcp:tools
+uv run python generate_token.py --username bob --scopes mcp:read,mcp:prompts
+uv run python generate_token.py --username admin --scopes mcp:read,mcp:tools,mcp:prompts
+uv run python generate_token.py --username guest --scopes ""
+```
+
+The script will output a JWT token that can be used in the `Authorization: Bearer <token>` header for authenticated requests.
 
 ## Dependencies
 
