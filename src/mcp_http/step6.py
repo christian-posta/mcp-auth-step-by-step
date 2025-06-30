@@ -3,7 +3,6 @@ from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, Union, Dict, Any
 from mcp.server import Server
 import uvicorn
@@ -96,14 +95,39 @@ class JWTMCPServer:
             logger.error(f"Failed to generate JWK: {e}")
     
     def setup_middleware(self):
-        """Setup CORS middleware."""
-        self.app.add_middleware(
-            CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+        """Setup Origin validation middleware."""
+        
+        @self.app.middleware("http")
+        async def origin_validation_middleware(request: Request, call_next):
+            """
+            Middleware to validate Origin header according to MCP specification.
+            This prevents DNS rebinding attacks by ensuring requests come from trusted origins.
+            """
+            # Skip validation for health check endpoint (optional)
+            if request.url.path == "/health":
+                response = await call_next(request)
+                return response
+            
+            # Get the Origin header
+            origin = request.headers.get("origin")
+            
+            # Allow requests with no Origin header to allow mcp-inspector to work
+            if not origin:
+                logger.info("✅ No Origin header - allowing for MCP client")
+                response = await call_next(request)
+                return response
+            
+            # Validate the origin - allow localhost and 127.0.0.1 on any port
+            if not origin.startswith("http://localhost") and not origin.startswith("http://127.0.0.1"):
+                logger.warning(f"❌ Origin '{origin}' rejected")
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": f"Origin '{origin}' is not allowed. Only localhost and 127.0.0.1 are permitted."}
+                )
+            
+            logger.info(f"✅ Origin '{origin}' accepted")
+            response = await call_next(request)
+            return response
     
     async def verify_token(
         self,
@@ -198,11 +222,11 @@ class JWTMCPServer:
         @self.app.get("/mcp")
         async def handle_mcp_get(request: Request):
             """Handle GET requests to MCP endpoint."""
-            return JSONResponse(content={
-                "server": "mcp-echo",
-                "transport": "streamable-http",
-                "version": "0.1.0"
-            })
+            # Return 405 Method Not Allowed as per MCP spec for servers that don't support SSE
+            return JSONResponse(
+                status_code=405,
+                content={"detail": "Method Not Allowed - This server does not support server-initiated streaming"}
+            )
         
         @self.app.post("/mcp")
         async def handle_mcp_request(
