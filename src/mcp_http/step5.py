@@ -9,7 +9,7 @@ import uvicorn
 import os
 import logging
 
-from mcp.types import Tool, Prompt, PromptArgument, TextContent, PromptMessage, GetPromptResult
+from mcp.types import Tool, TextContent
 from pydantic import Field
 from typing import List
 
@@ -117,6 +117,15 @@ class JWTMCPServer:
                 "jwks_available": self.public_key_jwk is not None
             }
         
+        @self.app.get("/mcp")
+        async def handle_mcp_get(request: Request):
+            """Handle GET requests to MCP endpoint."""
+            return JSONResponse(content={
+                "server": "mcp-echo",
+                "transport": "streamable-http",
+                "version": "0.1.0"
+            })
+        
         @self.app.post("/mcp")
         async def handle_mcp_request(request: Request):
             body = await request.json()
@@ -128,7 +137,7 @@ class JWTMCPServer:
                 if mcp_request.method == "initialize":
                     result = {
                         "protocolVersion": "2025-06-18",
-                        "capabilities": {"tools": {"listChanged": False}, "prompts": {"listChanged": False}},
+                        "capabilities": {"tools": {"listChanged": False}},
                         "serverInfo": {
                             "name": "mcp-echo",
                             "version": "0.1.0",
@@ -137,7 +146,9 @@ class JWTMCPServer:
                     }
                 elif mcp_request.method == "tools/list":
                     tools = await list_tools()
-                    result = [tool.model_dump() for tool in tools]
+                    result = {
+                        "tools": [tool.model_dump() for tool in tools]
+                    }
                 elif mcp_request.method == "tools/call":
                     content = await call_tool(mcp_request.params["name"], mcp_request.params["arguments"])
                     result = {
@@ -157,24 +168,30 @@ class JWTMCPServer:
 
         @self.server.list_tools()
         async def list_tools() -> List[Tool]:
-            return [Tool(name="echo", description="Echo a message", inputSchema=EchoRequest.model_json_schema())]
+            return [Tool(
+                name="echo", 
+                description="Echo a message", 
+                title="Echo Tool",
+                inputSchema=EchoRequest.model_json_schema(),
+                outputSchema={
+                    "type": "object",
+                    "properties": {
+                        "text": {"type": "string", "description": "The echoed message"}
+                    }
+                },
+                annotations={
+                    "title": "Echo Tool",
+                    "readOnlyHint": False,
+                    "destructiveHint": False,
+                    "idempotentHint": True,
+                    "openWorldHint": False
+                }
+            )]
 
         @self.server.call_tool()
         async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             args = EchoRequest(**arguments)
             return [TextContent(type="text", text=args.message * args.repeat_count)]
-
-        @self.server.list_prompts()
-        async def list_prompts() -> List[Prompt]:
-            return [Prompt(name="echo_prompt", description="Echo prompt", arguments=[
-                PromptArgument(name="message", description="Message", required=True)])]
-
-        @self.server.get_prompt()
-        async def get_prompt(name: str, arguments: Optional[Dict[str, str]]) -> GetPromptResult:
-            msg = arguments.get("message", "Hello") if arguments else "Hello"
-            return GetPromptResult(messages=[
-                PromptMessage(role="user", content=[TextContent(type="text", text=f"Please echo: {msg}")])
-            ])
 
     def main(self):
         uvicorn.run(self.app, host="0.0.0.0", port=9000)
