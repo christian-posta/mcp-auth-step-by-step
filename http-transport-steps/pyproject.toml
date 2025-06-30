@@ -7,6 +7,8 @@ dependencies = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
     "mcp>=1.1.3",
+    "PyJWT>=2.8.0",
+    "cryptography>=41.0.0",
 ]
 
 [project.scripts]
@@ -14,6 +16,7 @@ step1 = "mcp_http.step1:main"
 step2 = "mcp_http.step2:main"
 step3 = "mcp_http.step3:main"
 step4 = "mcp_http.step4:main"
+step5 = "mcp_http.step5:main"
 
 [build-system]
 requires = ["hatchling"]
