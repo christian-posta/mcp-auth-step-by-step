@@ -1,13 +1,13 @@
 # MCP Auth Step-by-Step
 
-A complete Model Context Protocol (MCP) implementation demonstrating authentication and communication between a server and client over HTTP transport.
+A complete Model Context Protocol (MCP) implementation demonstrating remote MCP server with HTTP transport, and another server with authorization and communication between a server and client over HTTP transport.
 
 ## Project Overview
 
 This project consists of two main components:
 
-1. **MCP Echo Server** - A server that provides echo functionality with JWT authentication
-2. **MCP Echo Client** - A client for communicating with the echo server
+1. **MCP Echo Server** - Two servers, that provides echo functionality. One without auth and one with JWT auth
+2. **MCP Echo Client** - A client for communicating with the non-auth echo server; communication with the auth server should happen with the test file, or generate your own keys and call it
 
 ## Features
 
@@ -46,12 +46,19 @@ To run the MCP server with JWT Authentication:
 uv run python -m mcp_server_echo.jwt_server
 ```
 
-You can generate your own tokens:
+You can generate your own tokens and call with [mcp-inspector](https://github.com/modelcontextprotocol/inspector):
+
 ```bash
 uv run python generate_token.py
 ```
+You can run the mcp-inspector and connect to the MCP server:
+
+```bash
+npx @modelcontextprotocol/inspector
+```
 
 Or run the full JWT test:
+
 ```bash
 uv run python test_jwt_server.py
 ```
@@ -59,7 +66,7 @@ uv run python test_jwt_server.py
 
 ### Running the Client
 
-The client is intended to be used with the non-auth MCP server. It shows HTTP Transport. 
+The client is intended to be used with the non-auth MCP server. It shows HTTP Transport. To use test the JWT server, use mcp-inspector and generate your own token (see above)
 
 
 #### Option 1: Using `uv` (Recommended)
