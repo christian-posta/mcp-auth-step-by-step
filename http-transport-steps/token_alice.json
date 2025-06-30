@@ -4,13 +4,13 @@
     "mcp:read",
     "mcp:tools"
   ],
-  "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Im1jcC1rZXktMSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJtY3Atc2ltcGxlLWF1dGgiLCJhdWQiOiJtY3Atc2VydmVyIiwic3ViIjoidXNlcl9hbGljZSIsImlhdCI6MTc1MTMyNTM4NiwiZXhwIjoxNzUxMzI4OTg2LCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhbGljZSIsInNjb3BlIjoibWNwOnJlYWQgbWNwOnRvb2xzIiwic2NvcGVzIjpbIm1jcDpyZWFkIiwibWNwOnRvb2xzIl0sInJvbGVzIjpbInVzZXIiXX0.rzg2ystOnw0hBCP7EYXjeziPXWsWB1x7keMxSMMXM-ysGiXpJwCzP9SzD9NF6LwExxNMMAMsByGBpw0jkZs-bl18YHqKPbZYbae25L_9Bj5U0FqHOCOIWrxh2Pz0qBsxfElT_r2L7mzCTGt-H3bYOwIovMfqMnEhG0jbVRS_sdns1ZZp3yn2cPTkPb97QaG25-fve1WV4pksQU_nJEIll8zlC-7_ZQ6bvbNjbhl4kSo3PxcxRIutfbC5ArgdIW6xa1GQ1QfB-pNV4FIXK31xQUjxuFgUzQalz_v5ix4QnJmQ3IrIPl7kNHc_gfWwmqVChLWzH-h9Z_OlzLnY70R2hw",
+  "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Im1jcC1rZXktMSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJtY3Atc2ltcGxlLWF1dGgiLCJhdWQiOiJtY3Atc2VydmVyIiwic3ViIjoidXNlcl9hbGljZSIsImlhdCI6MTc1MTMyNTcwNiwiZXhwIjoxNzUxMzI5MzA2LCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhbGljZSIsInNjb3BlIjoibWNwOnJlYWQgbWNwOnRvb2xzIiwic2NvcGVzIjpbIm1jcDpyZWFkIiwibWNwOnRvb2xzIl0sInJvbGVzIjpbInVzZXIiXX0.G5QUt85g432pXJl6c2xpzZJ0RpBL89pGxjtWRka3_8EXgsn6d1jWC36WJFWb22TGMbllpdHfOIU68U9ZFOX6MZc3zNQAYcs_iYjXuBEI1F7M2KbRvU2ktTtpd4ddKRaNqqiIf4b3yikT-EYaBlSBGPHx17lyZwKnboapL4ZTlbE8OMroIuGKEB66FV_YPpGTByYrybQxXNGrYORibEKOihn7MPDwvhBiZwNM0GDi9mzREzCKKnBnRx8vmLtBes7MC3HdIentqY15bl1AZSefW5hnDuS9p7eVVvRAexeMnGQbUOEVK94NUqXzQdeuPJKk4n5Dawj04zlfY-g_k_pkig",
   "payload": {
     "iss": "mcp-simple-auth",
     "aud": "mcp-server",
     "sub": "user_alice",
-    "iat": 1751325386,
-    "exp": 1751328986,
+    "iat": 1751325706,
+    "exp": 1751329306,
     "preferred_username": "alice",
     "scope": "mcp:read mcp:tools",
     "scopes": [
@@ -21,5 +21,5 @@
       "user"
     ]
   },
-  "expires_at": "2025-06-30T17:16:26"
+  "expires_at": "2025-06-30T17:21:46"
 }
