@@ -137,6 +137,20 @@ uv run python generate_token.py --username admin --scopes mcp:read,mcp:tools,mcp
 uv run python generate_token.py --username guest --scopes ""
 ```
 
+### Keycloak Token Generation
+To quickly get a token for testing step9/keycloak:
+
+```bash# Get token for admin user (full access)
+curl -X POST "http://localhost:8080/realms/mcp-realm/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password" \
+  -d "client_id=mcp-test-client" \
+  -d "username=mcp-admin" \
+  -d "password=admin123" \
+  -d "scope=openid profile email mcp:read mcp:tools mcp:prompts" | jq -r '.access_token'
+
+```
+
 The script will output a JWT token that can be used in the `Authorization: Bearer <token>` header for authenticated requests.
 
 ## Dependencies
