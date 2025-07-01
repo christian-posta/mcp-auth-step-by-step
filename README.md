@@ -2,6 +2,13 @@
 
 This repository demonstrates building an MCP (Model Context Protocol) server with HTTP transport and JWT authentication, progressing through iterative steps.
 
+This repo is a companion to the in-depth, step-by-step blog posts on "MCP Authorization". See the following:
+
+* [Understanding MCP Authorization, Step by Step, Part One](https://blog.christianposta.com/understanding-mcp-authorization-step-by-step/)
+* [Understanding MCP Authorization, Step by Step, Part Two](https://blog.christianposta.com/understanding-mcp-authorization-step-by-step-part-two/)
+* Understanding MCP Authorization, Step by Step, Part Three
+
+
 ## Overview
 
 The project shows how to build a secure MCP server with:
