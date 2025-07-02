@@ -516,28 +516,30 @@ main() {
     # Test OAuth metadata endpoints
     print_info "=== Testing OAuth metadata endpoints ==="
     
+    # Test MCP server's protected resource metadata (RFC9728)
     local protected_resource=$(curl -s "$MCP_SERVER_URL/.well-known/oauth-protected-resource")
-    if echo "$protected_resource" | grep -q "mcp-realm"; then
+    if echo "$protected_resource" | grep -q "authorization_servers"; then
         print_status "OAuth protected resource metadata endpoint working"
+        echo "$protected_resource" | jq '.'
     else
         print_error "OAuth protected resource metadata endpoint failed"
         echo "$protected_resource" | jq '.'
     fi
     
-    local auth_server=$(curl -s "$MCP_SERVER_URL/.well-known/oauth-authorization-server")
-    if echo "$auth_server" | grep -q "mcp-realm"; then
-        print_status "OAuth authorization server metadata endpoint working"
+    # Test Keycloak's authorization server metadata (RFC8414) - should be accessible via the link from protected resource
+    local auth_server_url=$(echo "$protected_resource" | jq -r '.authorization_servers[0] // empty')
+    if [ ! -z "$auth_server_url" ]; then
+        print_info "Testing Keycloak authorization server metadata at: $auth_server_url"
+        local auth_server=$(curl -s "$auth_server_url")
+        if echo "$auth_server" | grep -q "issuer"; then
+            print_status "Keycloak authorization server metadata endpoint working"
+            echo "$auth_server" | jq '.'
+        else
+            print_error "Keycloak authorization server metadata endpoint failed"
+            echo "$auth_server" | jq '.'
+        fi
     else
-        print_error "OAuth authorization server metadata endpoint failed"
-        echo "$auth_server" | jq '.'
-    fi
-    
-    local jwks=$(curl -s "$MCP_SERVER_URL/.well-known/jwks.json")
-    if echo "$jwks" | grep -q "keys"; then
-        print_status "JWKS endpoint working"
-    else
-        print_error "JWKS endpoint failed"
-        echo "$jwks" | jq '.'
+        print_error "No authorization server URL found in protected resource metadata"
     fi
     
     pause_for_inspection "OAuth metadata endpoints tests"

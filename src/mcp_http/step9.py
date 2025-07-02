@@ -363,7 +363,7 @@ class KeycloakMCPServer:
             """OAuth 2.0 Protected Resource Metadata (RFC 9728)."""
             return {
                 "resource": MCP_SERVER_URL,
-                "authorization_servers": [f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}"],
+                "authorization_servers": [f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/.well-known/oauth-authorization-server"],
                 "scopes_supported": ["mcp:read", "mcp:tools", "mcp:prompts"],
                 "bearer_methods_supported": ["header"],
                 "resource_documentation": f"{MCP_SERVER_URL}/docs",
@@ -371,32 +371,9 @@ class KeycloakMCPServer:
                 "resource_type": "mcp-server"
             }
         
-        @self.app.get("/.well-known/oauth-authorization-server")
-        async def authorization_server_metadata():
-            """Keycloak authorization server metadata."""
-            return {
-                "issuer": JWT_ISSUER,
-                "token_endpoint": f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token",
-                "jwks_uri": f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs",
-                "scopes_supported": ["openid", "profile", "email", "mcp:read", "mcp:tools", "mcp:prompts"],
-                "response_types_supported": ["token"],
-                "grant_types_supported": ["password", "client_credentials"],
-                "token_endpoint_auth_methods_supported": ["client_secret_basic", "client_secret_post"],
-                "resource_indicators_supported": True,
-                "authorization_endpoint": f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/auth"
-            }
+
         
-        @self.app.get("/.well-known/jwks.json")
-        async def jwks_endpoint():
-            """Proxy to Keycloak's JWKS endpoint."""
-            try:
-                jwks_data = await self.fetch_keycloak_jwks()
-                return jwks_data
-            except Exception as e:
-                return JSONResponse(
-                    status_code=503,
-                    content={"error": f"JWKS not available: {str(e)}"}
-                )
+
         
         @self.app.get("/health")
         async def health():
@@ -420,8 +397,8 @@ class KeycloakMCPServer:
                 },
                 "oauth_metadata": {
                     "protected_resource": f"{MCP_SERVER_URL}/.well-known/oauth-protected-resource",
-                    "authorization_server": f"{MCP_SERVER_URL}/.well-known/oauth-authorization-server",
-                    "jwks": f"{MCP_SERVER_URL}/.well-known/jwks.json"
+                    "authorization_server": f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/.well-known/oauth-authorization-server",
+                    "jwks": f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs"
                 }
             }
         
@@ -511,7 +488,7 @@ class KeycloakMCPServer:
                             },
                             "oauth_metadata": {
                                 "protected_resource": f"{MCP_SERVER_URL}/.well-known/oauth-protected-resource",
-                                "authorization_server": f"{MCP_SERVER_URL}/.well-known/oauth-authorization-server"
+                                "authorization_server": f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/.well-known/oauth-authorization-server"
                             }
                         }
                     }
