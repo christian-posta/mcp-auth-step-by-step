@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Step 9: Keycloak Integration Test Script
-# This script sets up Keycloak, gets tokens, and tests the MCP server
+# Step 9: Keycloak Setup Verification and Token Testing
+# This script verifies Keycloak setup and tests token acquisition
 
 set -e
 
@@ -15,12 +15,10 @@ NC='\033[0m' # No Color
 # Configuration
 KEYCLOAK_URL="http://localhost:8080"
 KEYCLOAK_REALM="mcp-realm"
-MCP_SERVER_URL="http://localhost:9000"
 CLIENT_ID="mcp-test-client"
 CLIENT_SECRET="mcp-secret-key-change-me"
 
 # Global variables
-MCP_SERVER_PID=""
 INSPECT_MODE=false
 
 # Parse command line arguments
@@ -50,7 +48,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo -e "${BLUE}=== Step 9: Keycloak Integration Test ===${NC}"
+echo -e "${BLUE}=== Step 9: Keycloak Setup Verification and Token Testing ===${NC}"
 if [ "$INSPECT_MODE" = true ]; then
     echo -e "${YELLOW}Inspection mode enabled - will pause after each test scenario${NC}"
 fi
@@ -121,81 +119,33 @@ decode_jwt() {
     print_info "  Scope: $scope" >&2
 }
 
-# Cleanup function to stop MCP server
-cleanup() {
-    if [ ! -z "$MCP_SERVER_PID" ]; then
-        print_info "Stopping MCP server (PID: $MCP_SERVER_PID)..."
-        kill $MCP_SERVER_PID 2>/dev/null || true
-        wait $MCP_SERVER_PID 2>/dev/null || true
-        print_status "MCP server stopped"
+# Pause function for inspection mode
+pause_for_inspection() {
+    local scenario_name="$1"
+    
+    if [ "$INSPECT_MODE" = true ]; then
+        echo ""
+        echo -e "${BLUE}=== Test scenario completed: $scenario_name ===${NC}"
+        echo -e "${YELLOW}Press Enter to continue to the next test scenario, or type 'n' to exit:${NC}"
+        read -r response
+        if [[ "$response" =~ ^[Nn]$ ]]; then
+            echo -e "${YELLOW}Exiting tests as requested...${NC}"
+            exit 0
+        fi
+        echo ""
     fi
 }
-
-# Set up trap to cleanup on script exit
-trap cleanup EXIT
 
 # Check if Keycloak is running
 check_keycloak() {
     print_info "Checking if Keycloak is running..."
-    if curl -s "$KEYCLOAK_URL/health" > /dev/null 2>&1; then
+    if curl -s "$KEYCLOAK_URL/realms/master" > /dev/null 2>&1; then
         print_status "Keycloak is running"
     else
-        print_error "Keycloak is not running. Please start Keycloak first:"
-        echo "  cd keycloak && docker-compose up -d"
+        print_error "Keycloak is not running. Please run step9.py first:"
+        echo "  uv run python src/mcp_http/step9.py"
         exit 1
     fi
-}
-
-# Setup Keycloak with MCP configuration
-setup_keycloak() {
-    print_info "Setting up Keycloak with MCP configuration..."
-    
-    if [ ! -f "keycloak/config.json" ]; then
-        print_error "MCP Keycloak configuration file not found: keycloak/config.json"
-        exit 1
-    fi
-    
-    cd keycloak
-    uv run python setup_keycloak.py --config config.json --url "$KEYCLOAK_URL" --summary
-    cd ..
-    
-    print_status "Keycloak setup completed"
-}
-
-# Start MCP server
-start_mcp_server() {
-    print_info "Starting MCP server..."
-    
-    # Check if the step9.py file exists
-    if [ ! -f "src/mcp_http/step9.py" ]; then
-        print_error "MCP server file not found: src/mcp_http/step9.py"
-        exit 1
-    fi
-    
-    # Start the MCP server in the background
-    uv run python src/mcp_http/step9.py &
-    MCP_SERVER_PID=$!
-    
-    print_info "MCP server started with PID: $MCP_SERVER_PID"
-    
-    # Wait for server to start
-    print_info "Waiting for MCP server to start..."
-    local max_attempts=30
-    local attempt=1
-    
-    while [ $attempt -le $max_attempts ]; do
-        if curl -s "$MCP_SERVER_URL/health" > /dev/null 2>&1; then
-            print_status "MCP server is ready"
-            return 0
-        fi
-        
-        print_info "Waiting for MCP server... (attempt $attempt/$max_attempts)"
-        sleep 2
-        attempt=$((attempt + 1))
-    done
-    
-    print_error "MCP server failed to start within expected time"
-    exit 1
 }
 
 # Get access token from Keycloak
@@ -258,297 +208,134 @@ get_token() {
     fi
 }
 
-# Test MCP server health
-test_mcp_health() {
-    print_info "Testing MCP server health..."
+# Test realm configuration
+test_realm_config() {
+    print_info "Testing realm configuration..."
     
-    local health_response=$(curl -s "$MCP_SERVER_URL/health")
+    local realm_info=$(curl -s "$KEYCLOAK_URL/realms/$KEYCLOAK_REALM")
     
-    if echo "$health_response" | grep -q "keycloak_integration.*true"; then
-        print_status "MCP server health check passed"
-        echo "$health_response" | jq '.'
+    if echo "$realm_info" | grep -q "mcp-realm"; then
+        print_status "Realm configuration verified"
+        echo "$realm_info" | jq '.'
     else
-        print_error "MCP server health check failed:"
-        echo "$health_response" | jq '.'
+        print_error "Realm configuration verification failed"
+        echo "$realm_info" | jq '.'
         exit 1
     fi
 }
 
-# Test MCP server without token (should fail)
-test_unauthorized() {
-    print_info "Testing MCP server without token (should fail)..."
+# Test OAuth authorization server metadata
+test_oauth_metadata() {
+    print_info "Testing OAuth authorization server metadata..."
     
-    local response=$(curl -s -w "%{http_code}" \
-        -X POST "$MCP_SERVER_URL/mcp" \
-        -H "Content-Type: application/json" \
-        -d '{"jsonrpc": "2.0", "id": 1, "method": "ping"}')
+    local auth_server_metadata=$(curl -s "$KEYCLOAK_URL/realms/$KEYCLOAK_REALM/.well-known/oauth-authorization-server")
     
-    local http_code="${response: -3}"
-    local body="${response%???}"
-    
-    if [ "$http_code" = "401" ]; then
-        print_status "Unauthorized request correctly rejected"
+    if echo "$auth_server_metadata" | grep -q "issuer"; then
+        print_status "OAuth authorization server metadata verified"
+        echo "$auth_server_metadata" | jq '.'
     else
-        print_error "Expected 401, got $http_code"
-        echo "$body" | jq '.'
+        print_error "OAuth authorization server metadata verification failed"
+        echo "$auth_server_metadata" | jq '.'
         exit 1
     fi
 }
 
-# Test MCP server with token
-test_authorized() {
-    local token=$1
-    local method=$2
-    local params=$3
+# Test JWKS endpoint
+test_jwks() {
+    print_info "Testing JWKS endpoint..."
     
-    print_info "Testing MCP server with token for method: $method"
+    local jwks=$(curl -s "$KEYCLOAK_URL/realms/$KEYCLOAK_REALM/protocol/openid-connect/certs")
     
-    # Build the JSON request
-    local json_request="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"$method\""
-    
-    # Add params if provided
-    if [ ! -z "$params" ]; then
-        json_request="$json_request, \"params\": $params"
-    fi
-    
-    json_request="$json_request}"
-    
-    # Debug: print the JSON being sent
-    print_info "Sending JSON: $json_request"
-    
-    # Debug: Check token before sending
-    print_info "Token being used:"
-    print_info "Token length: ${#token}"
-    print_info "Token starts with: ${token:0:20}..."
-    print_info "Token ends with: ...${token: -20}"
-    
-    # Use a temporary file for the JSON to avoid shell escaping issues
-    local temp_json=$(mktemp)
-    echo "$json_request" > "$temp_json"
-    
-    # Debug: Show the curl command being executed
-    print_info "Executing curl command:"
-    print_info "curl -s -X POST $MCP_SERVER_URL/mcp -H 'Content-Type: application/json' -H 'Authorization: Bearer ${token:0:20}...' -d @$temp_json"
-    
-    local response=$(curl -s \
-        -X POST "$MCP_SERVER_URL/mcp" \
-        -H "Content-Type: application/json" \
-        -H "Authorization: Bearer $token" \
-        -d "@$temp_json")
-    
-    # Clean up temp file
-    rm -f "$temp_json"
-    
-    # Debug: print raw response
-    print_info "Raw response: $response"
-    
-    if echo "$response" | grep -q "result"; then
-        print_status "Authorized request successful for $method"
-        echo "$response" | jq '.result'
-        
-        # Check if scopes are included in response
-        if echo "$response" | grep -q "userScopes"; then
-            local response_scopes=$(echo "$response" | jq -r '.result.userScopes[]? // empty')
-            print_info "User scopes in response: $response_scopes"
-        fi
+    if echo "$jwks" | grep -q "keys"; then
+        print_status "JWKS endpoint verified"
+        echo "$jwks" | jq '.'
     else
-        print_error "Authorized request failed for $method:"
-        echo "$response" | jq '.' 2>/dev/null || echo "Raw response: $response"
+        print_error "JWKS endpoint verification failed"
+        echo "$jwks" | jq '.'
         exit 1
     fi
 }
 
-# Test scope-based authorization
-test_scope_authorization() {
-    local token=$1
-    local method=$2
-    local should_succeed=$3
-    local params=$4
+# Test token acquisition and validation
+test_token_acquisition() {
+    local username=$1
+    local password=$2
+    local scopes=$3
+    local expected_audience=$4
     
-    print_info "Testing scope authorization for $method (should $should_succeed)..."
+    print_info "=== Testing token acquisition for user: $username ==="
     
-    # Build the JSON request
-    local json_request="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"$method\""
-    
-    # Add params if provided
-    if [ ! -z "$params" ]; then
-        json_request="$json_request, \"params\": $params"
+    # Get token
+    local token=$(get_token "$username" "$password" "$scopes")
+    if [ $? -ne 0 ]; then
+        print_error "Failed to get token for $username"
+        exit 1
     fi
     
-    json_request="$json_request}"
+    # Decode and validate token
+    decode_jwt "$token"
     
-    # Use a temporary file for the JSON to avoid shell escaping issues
-    local temp_json=$(mktemp)
-    echo "$json_request" > "$temp_json"
+    # Verify audience using the same approach as decode_jwt
+    IFS='.' read -r header_b64 payload_b64 signature_b64 <<< "$token"
+    payload_b64_padded=$(printf '%s' "$payload_b64" | sed 's/-/+/g; s/_/\//g')
+    while [ $((${#payload_b64_padded} % 4)) -ne 0 ]; do
+        payload_b64_padded="${payload_b64_padded}="
+    done
+    local actual_audience=$(echo "$payload_b64_padded" | base64 -d 2>/dev/null | jq -r '.aud // empty' 2>/dev/null)
     
-    local response=$(curl -s \
-        -X POST "$MCP_SERVER_URL/mcp" \
-        -H "Content-Type: application/json" \
-        -H "Authorization: Bearer $token" \
-        -d "@$temp_json")
-    
-    # Clean up temp file
-    rm -f "$temp_json"
-    
-    if [ "$should_succeed" = "succeed" ]; then
-        if echo "$response" | grep -q "result"; then
-            print_status "Scope authorization test passed for $method"
-        else
-            print_error "Scope authorization test failed for $method (expected success):"
-            echo "$response" | jq '.' 2>/dev/null || echo "Raw response: $response"
-            exit 1
-        fi
+    if [ "$actual_audience" = "$expected_audience" ]; then
+        print_status "Token audience verification passed: $actual_audience"
     else
-        if echo "$response" | grep -q "error.*Forbidden"; then
-            print_status "Scope authorization test passed for $method (correctly denied)"
-        else
-            print_error "Scope authorization test failed for $method (expected failure):"
-            echo "$response" | jq '.' 2>/dev/null || echo "Raw response: $response"
-            exit 1
-        fi
+        print_error "Token audience verification failed. Expected: $expected_audience, Got: $actual_audience"
+        exit 1
     fi
-}
-
-# Pause function for inspection mode
-pause_for_inspection() {
-    local scenario_name="$1"
     
-    if [ "$INSPECT_MODE" = true ]; then
-        echo ""
-        echo -e "${BLUE}=== Test scenario completed: $scenario_name ===${NC}"
-        echo -e "${YELLOW}Press Enter to continue to the next test scenario, or type 'n' to exit:${NC}"
-        read -r response
-        if [[ "$response" =~ ^[Nn]$ ]]; then
-            echo -e "${YELLOW}Exiting tests as requested...${NC}"
-            exit 0
-        fi
-        echo ""
-    fi
+    # Verify scopes using the same approach
+    local actual_scopes=$(echo "$payload_b64_padded" | base64 -d 2>/dev/null | jq -r '.scope // empty' 2>/dev/null)
+    print_info "Token scopes: $actual_scopes"
+    
+    print_status "Token acquisition and validation passed for $username"
 }
 
 # Main test execution
 main() {
-    print_info "Starting Step 9 Keycloak integration test..."
+    print_info "Starting Step 9 Keycloak verification and token testing..."
     
     # Check prerequisites
     check_keycloak
     pause_for_inspection "Keycloak health check"
-        
-    # Start MCP server
-    start_mcp_server
-    pause_for_inspection "MCP server startup"
     
-    # Test MCP server health
-    test_mcp_health
-    pause_for_inspection "MCP server health check"
+    # Test realm configuration
+    test_realm_config
+    pause_for_inspection "Realm configuration test"
     
-    # Test unauthorized access
-    test_unauthorized
-    pause_for_inspection "Unauthorized access test"
+    # Test OAuth metadata
+    test_oauth_metadata
+    pause_for_inspection "OAuth metadata test"
     
-    # Test with admin user (full access)
-    print_info "=== Testing with admin user (full access) ==="
+    # Test JWKS endpoint
+    test_jwks
+    pause_for_inspection "JWKS endpoint test"
     
-    # Get admin token with debug
-    print_info "About to call get_token..." >&2
-    admin_token=$(get_token "mcp-admin" "admin123" "openid profile email mcp:read mcp:tools mcp:prompts")
-    token_exit_code=$?
-    print_info "get_token exit code: $token_exit_code" >&2
-    print_info "Captured token length: ${#admin_token}" >&2
-    print_info "Captured token starts with: ${admin_token:0:50}..." >&2
-    print_info "Captured token ends with: ...${admin_token: -50}" >&2
+    # Test token acquisition for admin user
+    test_token_acquisition "mcp-admin" "admin123" "openid profile email mcp:read mcp:tools mcp:prompts" "echo-mcp-server"
+    pause_for_inspection "Admin user token test"
     
-    if [ $token_exit_code -ne 0 ]; then
-        print_error "Failed to get admin token"
-        exit 1
-    fi
+    # Test token acquisition for regular user
+    test_token_acquisition "mcp-user" "user123" "openid profile email mcp:read mcp:tools" "echo-mcp-server"
+    pause_for_inspection "Regular user token test"
     
-    decode_jwt "$admin_token"
+    # Test token acquisition for readonly user
+    test_token_acquisition "mcp-readonly" "readonly123" "openid profile email mcp:read" "echo-mcp-server"
+    pause_for_inspection "Readonly user token test"
     
-    test_authorized "$admin_token" "ping"
-    test_authorized "$admin_token" "tools/list"
-    test_authorized "$admin_token" "tools/call" '{"name": "echo", "arguments": {"message": "Hello from admin", "repeat_count": 2}}'
-    test_authorized "$admin_token" "prompts/list"
-    test_authorized "$admin_token" "prompts/get" '{"name": "echo_prompt", "arguments": {"message": "Admin test"}}'
-    
-    pause_for_inspection "Admin user tests (full access)"
-    
-    # Test with regular user (limited access)
-    print_info "=== Testing with regular user (limited access) ==="
-    
-    # Get user token
-    user_token=$(get_token "mcp-user" "user123" "openid profile email mcp:read mcp:tools")
-    if [ $? -ne 0 ]; then
-        print_error "Failed to get user token"
-        exit 1
-    fi
-    
-    decode_jwt "$user_token"
-    
-    test_authorized "$user_token" "ping"
-    test_authorized "$user_token" "tools/list"
-    test_authorized "$user_token" "tools/call" '{"name": "echo", "arguments": {"message": "Hello from user", "repeat_count": 1}}'
-    test_scope_authorization "$user_token" "prompts/list" "fail"
-    test_scope_authorization "$user_token" "prompts/get" "fail"
-    
-    pause_for_inspection "Regular user tests (limited access)"
-    
-    # Test with readonly user (minimal access)
-    print_info "=== Testing with readonly user (minimal access) ==="
-    
-    # Get readonly token
-    readonly_token=$(get_token "mcp-readonly" "readonly123" "openid profile email mcp:read")
-    if [ $? -ne 0 ]; then
-        print_error "Failed to get readonly token"
-        exit 1
-    fi
-    
-    decode_jwt "$readonly_token"
-    
-    test_authorized "$readonly_token" "ping"
-    test_scope_authorization "$readonly_token" "tools/list" "fail"
-    test_scope_authorization "$readonly_token" "tools/call" "fail"
-    test_scope_authorization "$readonly_token" "prompts/list" "fail"
-    test_scope_authorization "$readonly_token" "prompts/get" "fail"
-    
-    pause_for_inspection "Readonly user tests (minimal access)"
-    
-    # Test OAuth metadata endpoints
-    print_info "=== Testing OAuth metadata endpoints ==="
-    
-    # Test MCP server's protected resource metadata (RFC9728)
-    local protected_resource=$(curl -s "$MCP_SERVER_URL/.well-known/oauth-protected-resource")
-    if echo "$protected_resource" | grep -q "authorization_servers"; then
-        print_status "OAuth protected resource metadata endpoint working"
-        echo "$protected_resource" | jq '.'
-    else
-        print_error "OAuth protected resource metadata endpoint failed"
-        echo "$protected_resource" | jq '.'
-    fi
-    
-    # Test Keycloak's authorization server metadata (RFC8414) - should be accessible via the link from protected resource
-    local auth_server_url=$(echo "$protected_resource" | jq -r '.authorization_servers[0] // empty')
-    if [ ! -z "$auth_server_url" ]; then
-        print_info "Testing Keycloak authorization server metadata at: $auth_server_url"
-        local auth_server=$(curl -s "$auth_server_url")
-        if echo "$auth_server" | grep -q "issuer"; then
-            print_status "Keycloak authorization server metadata endpoint working"
-            echo "$auth_server" | jq '.'
-        else
-            print_error "Keycloak authorization server metadata endpoint failed"
-            echo "$auth_server" | jq '.'
-        fi
-    else
-        print_error "No authorization server URL found in protected resource metadata"
-    fi
-    
-    pause_for_inspection "OAuth metadata endpoints tests"
-    
-    print_status "=== Step 9 Keycloak integration test completed successfully! ==="
+    print_status "=== Step 9 Keycloak verification and token testing completed successfully! ==="
     print_info "Keycloak URL: $KEYCLOAK_URL"
     print_info "Keycloak Realm: $KEYCLOAK_REALM"
-    print_info "MCP Server URL: $MCP_SERVER_URL"
+    print_info "Client ID: $CLIENT_ID"
     print_info "Test users: mcp-admin, mcp-user, mcp-readonly"
+    print_info "All tokens have correct audience: echo-mcp-server"
+    print_info "Ready for Step 10: MCP Server with Keycloak Integration"
 }
 
 # Run main function
