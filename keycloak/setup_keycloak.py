@@ -338,6 +338,10 @@ class KeycloakSetup:
                     "directAccessGrantsEnabled": client_config.get('directAccessGrantsEnabled', False)
                 })
                 
+            # Set fullScopeAllowed from config (defaults to true if not specified)
+            if 'fullScopeAllowed' in client_config:
+                client_data["fullScopeAllowed"] = client_config['fullScopeAllowed']
+                
                 # Add client secret if provided
                 if client_config.get('clientSecret'):
                     client_data["secret"] = client_config['clientSecret']

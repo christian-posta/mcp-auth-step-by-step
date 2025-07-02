@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 KEYCLOAK_URL = "http://localhost:8080"
 KEYCLOAK_REALM = "mcp-realm"
 JWT_ISSUER = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}"
-JWT_AUDIENCE = ["echo-mcp-server"]  
+JWT_AUDIENCE = ["echo-mcp-server"]  # Accept tokens with echo-mcp-server audience
 MCP_SERVER_URL = "http://localhost:9000"
 
 # Security scheme

@@ -17,6 +17,7 @@
       "enabled": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
+      "fullScopeAllowed": false,
       "assignedScopes": {
         "default": ["echo-mcp-server-audience"],
         "optional": ["mcp:read", "mcp:tools", "mcp:prompts"]
