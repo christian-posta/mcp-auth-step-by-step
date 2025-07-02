@@ -75,14 +75,38 @@ print_warning() {
 decode_jwt() {
     local token=$1
     print_info "Decoding JWT token..." >&2
+    print_info "Token length: ${#token}" >&2
+    print_info "Token starts with: ${token:0:20}..." >&2
+    
     # Split the token into parts
     IFS='.' read -r header_b64 payload_b64 signature_b64 <<< "$token"
+    
+    print_info "Header base64: $header_b64" >&2
+    print_info "Payload base64: $payload_b64" >&2
+    
+    # Add padding to base64 if needed (JWT uses URL-safe base64 without padding)
+    header_b64_padded=$(printf '%s' "$header_b64" | sed 's/-/+/g; s/_/\//g')
+    payload_b64_padded=$(printf '%s' "$payload_b64" | sed 's/-/+/g; s/_/\//g')
+    
+    # Add padding
+    while [ $((${#header_b64_padded} % 4)) -ne 0 ]; do
+        header_b64_padded="${header_b64_padded}="
+    done
+    while [ $((${#payload_b64_padded} % 4)) -ne 0 ]; do
+        payload_b64_padded="${payload_b64_padded}="
+    done
+    
+    print_info "Header base64 (padded): $header_b64_padded" >&2
+    print_info "Payload base64 (padded): $payload_b64_padded" >&2
+    
     # Decode header
-    local header=$(echo "$header_b64" | base64 -d 2>/dev/null | jq '.' 2>/dev/null)
+    local header=$(echo "$header_b64_padded" | base64 -d 2>/dev/null | jq '.' 2>/dev/null)
     print_info "Header: $header" >&2
+    
     # Decode payload
-    local payload=$(echo "$payload_b64" | base64 -d 2>/dev/null | jq '.' 2>/dev/null)
+    local payload=$(echo "$payload_b64_padded" | base64 -d 2>/dev/null | jq '.' 2>/dev/null)
     print_info "Payload: $payload" >&2
+    
     # Check key fields
     local issuer=$(echo "$payload" | jq -r '.iss // empty')
     local audience=$(echo "$payload" | jq -r '.aud // empty')
@@ -409,14 +433,7 @@ main() {
     # Check prerequisites
     check_keycloak
     pause_for_inspection "Keycloak health check"
-    
-    # Setup Keycloak
-    setup_keycloak
-    pause_for_inspection "Keycloak setup"
-    
-    # Wait a moment for setup to complete
-    sleep 2
-    
+        
     # Start MCP server
     start_mcp_server
     pause_for_inspection "MCP server startup"

@@ -24,10 +24,8 @@ logger = logging.getLogger(__name__)
 # Keycloak Configuration
 KEYCLOAK_URL = "http://localhost:8080"
 KEYCLOAK_REALM = "mcp-realm"
-KEYCLOAK_CLIENT_ID = "mcp-server-client"
 JWT_ISSUER = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}"
-# The audience can be either the client ID or "account" depending on Keycloak configuration
-JWT_AUDIENCE = ["mcp-server-client", "account"]  # Accept both
+JWT_AUDIENCE = ["echo-mcp-server"]  
 MCP_SERVER_URL = "http://localhost:9000"
 
 # Security scheme
@@ -417,7 +415,6 @@ class KeycloakMCPServer:
                 "keycloak_config": {
                     "url": KEYCLOAK_URL,
                     "realm": KEYCLOAK_REALM,
-                    "client_id": KEYCLOAK_CLIENT_ID,
                     "issuer": JWT_ISSUER,
                     "jwks_url": f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs"
                 },
@@ -510,7 +507,6 @@ class KeycloakMCPServer:
                             "userScopes": scopes,
                             "keycloak_config": {
                                 "realm": KEYCLOAK_REALM,
-                                "client_id": KEYCLOAK_CLIENT_ID,
                                 "issuer": JWT_ISSUER
                             },
                             "oauth_metadata": {
@@ -556,7 +552,6 @@ class KeycloakMCPServer:
                         "userScopes": scopes,
                         "keycloak_config": {
                             "realm": KEYCLOAK_REALM,
-                            "client_id": KEYCLOAK_CLIENT_ID,
                             "issuer": JWT_ISSUER
                         }
                     }

@@ -11,35 +11,39 @@
   },
   "clients": [
     {
-      "clientId": "mcp-server-client",
-      "name": "MCP Server Client",
-      "type": "confidential",
-      "enabled": true,
-      "serviceAccountsEnabled": true,
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
-      "clientSecret": "mcp-secret-key-change-me",
-      "assignedScopes": {
-        "default": ["openid", "profile", "email"],
-        "optional": ["mcp:read", "mcp:tools", "mcp:prompts"]
-      }
-    },
-    {
       "clientId": "mcp-test-client",
       "name": "MCP Test Client",
       "type": "public",
       "enabled": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
-      "redirectUris": ["http://localhost:3000/callback"],
-      "webOrigins": ["http://localhost:3000"],
       "assignedScopes": {
-        "default": ["openid", "profile", "email"],
+        "default": ["echo-mcp-server-audience"],
         "optional": ["mcp:read", "mcp:tools", "mcp:prompts"]
       }
     }
   ],
   "clientScopes": [
+    {
+      "name": "echo-mcp-server-audience",
+      "description": "Adds echo-mcp-server to token audience",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "mappers": [
+        {
+          "name": "echo-mcp-server-mapper",
+          "type": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "echo-mcp-server",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },    
     {
       "name": "mcp:read",
       "description": "Read access to MCP resources",
