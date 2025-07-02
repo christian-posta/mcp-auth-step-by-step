@@ -19,10 +19,41 @@ MCP_SERVER_URL="http://localhost:9000"
 CLIENT_ID="mcp-test-client"
 CLIENT_SECRET="mcp-secret-key-change-me"
 
-# Global variable to store MCP server PID
+# Global variables
 MCP_SERVER_PID=""
+INSPECT_MODE=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --inspect)
+            INSPECT_MODE=true
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --inspect    Pause after each test scenario to examine results"
+            echo "  -h, --help   Show this help message"
+            echo ""
+            echo "Examples:"
+            echo "  $0                    # Run all tests without pausing"
+            echo "  $0 --inspect          # Run tests with pauses for inspection"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use -h or --help for usage information"
+            exit 1
+            ;;
+    esac
+done
 
 echo -e "${BLUE}=== Step 9: Keycloak Integration Test ===${NC}"
+if [ "$INSPECT_MODE" = true ]; then
+    echo -e "${YELLOW}Inspection mode enabled - will pause after each test scenario${NC}"
+fi
 
 # Helper functions
 print_info() {
@@ -354,27 +385,49 @@ test_scope_authorization() {
     fi
 }
 
+# Pause function for inspection mode
+pause_for_inspection() {
+    local scenario_name="$1"
+    
+    if [ "$INSPECT_MODE" = true ]; then
+        echo ""
+        echo -e "${BLUE}=== Test scenario completed: $scenario_name ===${NC}"
+        echo -e "${YELLOW}Press Enter to continue to the next test scenario, or type 'n' to exit:${NC}"
+        read -r response
+        if [[ "$response" =~ ^[Nn]$ ]]; then
+            echo -e "${YELLOW}Exiting tests as requested...${NC}"
+            exit 0
+        fi
+        echo ""
+    fi
+}
+
 # Main test execution
 main() {
     print_info "Starting Step 9 Keycloak integration test..."
     
     # Check prerequisites
     check_keycloak
+    pause_for_inspection "Keycloak health check"
     
     # Setup Keycloak
     setup_keycloak
+    pause_for_inspection "Keycloak setup"
     
     # Wait a moment for setup to complete
     sleep 2
     
     # Start MCP server
     start_mcp_server
+    pause_for_inspection "MCP server startup"
     
     # Test MCP server health
     test_mcp_health
+    pause_for_inspection "MCP server health check"
     
     # Test unauthorized access
     test_unauthorized
+    pause_for_inspection "Unauthorized access test"
     
     # Test with admin user (full access)
     print_info "=== Testing with admin user (full access) ==="
@@ -401,6 +454,8 @@ main() {
     test_authorized "$admin_token" "prompts/list"
     test_authorized "$admin_token" "prompts/get" '{"name": "echo_prompt", "arguments": {"message": "Admin test"}}'
     
+    pause_for_inspection "Admin user tests (full access)"
+    
     # Test with regular user (limited access)
     print_info "=== Testing with regular user (limited access) ==="
     
@@ -419,6 +474,8 @@ main() {
     test_scope_authorization "$user_token" "prompts/list" "fail"
     test_scope_authorization "$user_token" "prompts/get" "fail"
     
+    pause_for_inspection "Regular user tests (limited access)"
+    
     # Test with readonly user (minimal access)
     print_info "=== Testing with readonly user (minimal access) ==="
     
@@ -436,6 +493,8 @@ main() {
     test_scope_authorization "$readonly_token" "tools/call" "fail"
     test_scope_authorization "$readonly_token" "prompts/list" "fail"
     test_scope_authorization "$readonly_token" "prompts/get" "fail"
+    
+    pause_for_inspection "Readonly user tests (minimal access)"
     
     # Test OAuth metadata endpoints
     print_info "=== Testing OAuth metadata endpoints ==="
@@ -463,6 +522,8 @@ main() {
         print_error "JWKS endpoint failed"
         echo "$jwks" | jq '.'
     fi
+    
+    pause_for_inspection "OAuth metadata endpoints tests"
     
     print_status "=== Step 9 Keycloak integration test completed successfully! ==="
     print_info "Keycloak URL: $KEYCLOAK_URL"
