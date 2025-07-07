@@ -6,7 +6,7 @@ This repo is a companion to the in-depth, step-by-step blog posts on "MCP Author
 
 * [Understanding MCP Authorization, Step by Step, Part One](https://blog.christianposta.com/understanding-mcp-authorization-step-by-step/)
 * [Understanding MCP Authorization, Step by Step, Part Two](https://blog.christianposta.com/understanding-mcp-authorization-step-by-step-part-two/)
-* Understanding MCP Authorization, Step by Step, Part Three
+* [Understanding MCP Authorization, Step by Step, Part Three](https://blog.christianposta.com/understanding-mcp-authorization-step-by-step-part-three/)
 
 
 ## Overview
