@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../schema/local.json
+binds:
+- port: 9090
+  listeners:
+  - routes:
+    - matches:
+        - path:
+            exact: /.well-known/oauth-authorization-server
+      policies:
+        cors:
+          allowOrigins:
+            - "*"
+          allowHeaders:
+            - "*"
+        urlRewrite:
+          path:
+            full: /realms/mcp-realm/.well-known/oauth-authorization-server
+      backends:
+      - host: localhost:8080
+    - matches:
+        - path:
+            pathPrefix: /
+      policies:
+        cors:
+          allowOrigins:
+            - "*"
+          allowHeaders:
+            - "*"
+      backends:
+      - host: localhost:8080 

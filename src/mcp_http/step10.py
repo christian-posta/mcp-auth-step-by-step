@@ -13,6 +13,7 @@ import time
 import httpx
 import json
 from datetime import datetime, timedelta
+from fastapi.middleware.cors import CORSMiddleware
 
 from mcp.types import Tool, Prompt, PromptArgument, TextContent, PromptMessage, GetPromptResult
 from pydantic import Field
@@ -22,7 +23,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Keycloak Configuration
-KEYCLOAK_URL = "http://localhost:8080"
+KEYCLOAK_URL = "http://localhost:9090"
 KEYCLOAK_REALM = "mcp-realm"
 JWT_ISSUER = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}"
 JWT_AUDIENCE = ["echo-mcp-server"]  # Accept tokens with echo-mcp-server audience
@@ -46,6 +47,20 @@ class KeycloakMCPServer:
     
     def __init__(self):
         self.app = FastAPI(title="Keycloak MCP Server", version="0.1.0")
+        # Add CORS middleware before custom middleware
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[
+                "http://localhost",
+                "http://127.0.0.1",
+                "http://localhost:9000",
+                "http://127.0.0.1:9000",
+                "http://localhost:6274"  # <-- Add your client origin here!
+            ],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"]
+        )
         self.server = Server("mcp-echo")
         self.jwks_cache = {}
         self.jwks_cache_time = None
@@ -363,8 +378,8 @@ class KeycloakMCPServer:
             """OAuth 2.0 Protected Resource Metadata (RFC 9728)."""
             return {
                 "resource": MCP_SERVER_URL,
-                "authorization_servers": [f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/.well-known/oauth-authorization-server"],
-                "scopes_supported": ["mcp:read", "mcp:tools", "mcp:prompts"],
+                "authorization_servers": [f"{JWT_ISSUER}"],
+                "scopes_supported": ["echo-mcp-server-audience", "mcp:read", "mcp:tools", "mcp:prompts"],
                 "bearer_methods_supported": ["header"],
                 "resource_documentation": f"{MCP_SERVER_URL}/docs",
                 "mcp_protocol_version": "2025-06-18",
