@@ -238,7 +238,7 @@ class JWTMCPServer:
             """OAuth 2.0 Protected Resource Metadata (RFC 9728)."""
             return {
                 "resource": MCP_SERVER_URL,
-                "authorization_servers": [JWT_ISSUER],
+                "authorization_servers": [MCP_SERVER_URL],
                 "scopes_supported": ["mcp:read", "mcp:tools", "mcp:prompts"],
                 "bearer_methods_supported": ["header"],
                 "resource_documentation": f"{MCP_SERVER_URL}/docs",
