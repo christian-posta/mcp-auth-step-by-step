@@ -139,6 +139,26 @@ uv run step3
 # ... etc
 ```
 
+### Running Step 10 with Environment Configuration
+
+Step 10 supports environment-based configuration for Keycloak and MCP server URLs. You can specify an env file (not .env) using the `--env` flag, or let it default to `keycloak_direct.env`.
+
+Two example env files are provided:
+- `keycloak_direct.env` (for direct Keycloak access at `localhost:8080`)
+- `keycloak_proxy.env` (for proxy access at `localhost:9090`)
+
+**Example usage:**
+
+```bash
+# Run step 10 with direct Keycloak access (default)
+python src/mcp_http/step10.py
+
+# Run step 10 with a specific env file (e.g., proxy)
+uv run step10 --env keycloak_proxy.env
+```
+
+If the env file or environment variables are missing, the server will fall back to sensible defaults (localhost:8080, etc).
+
 ### Token Generation
 
 For steps 5-8 that require JWT authentication, you can generate tokens using the `generate_token.py` script:

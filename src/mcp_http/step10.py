@@ -7,6 +7,8 @@ from typing import Optional, Union, Dict, Any, List
 from mcp.server import Server
 import uvicorn
 import os
+import sys
+import argparse
 import logging
 import jwt
 import time
@@ -14,6 +16,7 @@ import httpx
 import json
 from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
 from mcp.types import Tool, Prompt, PromptArgument, TextContent, PromptMessage, GetPromptResult
 from pydantic import Field
@@ -22,12 +25,32 @@ from pydantic import Field
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Keycloak Configuration
-KEYCLOAK_URL = "http://localhost:8080"
-KEYCLOAK_REALM = "mcp-realm"
-JWT_ISSUER = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}"
-JWT_AUDIENCE = ["echo-mcp-server"]  # Accept tokens with echo-mcp-server audience
-MCP_SERVER_URL = "http://localhost:9000"
+def load_config():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--env', type=str, default='keycloak_direct.env', help='Path to env file')
+    args, _ = parser.parse_known_args()
+    env_file = args.env
+    if os.path.exists(env_file):
+        load_dotenv(env_file)
+        print(f"[CONFIG] Loaded environment from {env_file}")
+    else:
+        print(f"[CONFIG] Env file {env_file} not found, using system environment.")
+    # Print loaded config for debug
+    print("[CONFIG] KEYCLOAK_URL:", os.environ.get('KEYCLOAK_URL'))
+    print("[CONFIG] KEYCLOAK_REALM:", os.environ.get('KEYCLOAK_REALM'))
+    print("[CONFIG] MCP_SERVER_URL:", os.environ.get('MCP_SERVER_URL'))
+    print("[CONFIG] JWT_AUDIENCE:", os.environ.get('JWT_AUDIENCE'))
+    print("[CONFIG] JWT_ISSUER:", os.environ.get('JWT_ISSUER'))
+
+# Call load_config at the top of the file
+load_config()
+
+# Update all config variables to use os.environ.get with hardcoded defaults
+KEYCLOAK_URL = os.environ.get('KEYCLOAK_URL', 'http://localhost:8080')
+KEYCLOAK_REALM = os.environ.get('KEYCLOAK_REALM', 'mcp-realm')
+JWT_ISSUER = os.environ.get('JWT_ISSUER', f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}")
+JWT_AUDIENCE = os.environ.get('JWT_AUDIENCE', 'echo-mcp-server')
+MCP_SERVER_URL = os.environ.get('MCP_SERVER_URL', 'http://localhost:9000')
 
 # Security scheme
 security = HTTPBearer(auto_error=False)
