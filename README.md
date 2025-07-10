@@ -10,10 +10,24 @@ This repo is a companion to the in-depth, step-by-step blog posts on "MCP Author
 
 Part 4 (not published yet)
 For step 11,
+you will need to run step10 mcp server 
 you will have to allow anonymous client registration:
 * add trusted hosts
 * for trusted host policy, you don't need matching on URI
 * allowable scopes for mcp:read, etc and aud mapper
+then run the step11 client
+
+uv run step11
+
+to run with mcp-inspector, 
+
+* you'll need to run agentgateway with config.yaml
+* uv run step10 --env keycloak_proxy.env
+* run mcp-inspector UI (note, some of the auth stuff is broken, at the moment, use this: https://github.com/christian-posta/mcp-inspector/tree/ceposta-patches)
+* then follow the step by step auth flow
+
+mcp scopes issue:
+https://github.com/modelcontextprotocol/inspector/issues/587
 
 ## Overview
 
@@ -150,9 +164,6 @@ Two example env files are provided:
 **Example usage:**
 
 ```bash
-# Run step 10 with direct Keycloak access (default)
-python src/mcp_http/step10.py
-
 # Run step 10 with a specific env file (e.g., proxy)
 uv run step10 --env keycloak_proxy.env
 ```
