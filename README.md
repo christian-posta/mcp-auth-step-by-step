@@ -8,26 +8,9 @@ This repo is a companion to the in-depth, step-by-step blog posts on "MCP Author
 * [Understanding MCP Authorization, Step by Step, Part Two](https://blog.christianposta.com/understanding-mcp-authorization-step-by-step-part-two/)
 * [Understanding MCP Authorization, Step by Step, Part Three](https://blog.christianposta.com/understanding-mcp-authorization-step-by-step-part-three/)
 
-Part 4 (not published yet)
-For step 11,
-you will need to run step10 mcp server 
-you will have to allow anonymous client registration:
-* add trusted hosts
-* for trusted host policy, you don't need matching on URI
-* allowable scopes for mcp:read, etc and aud mapper
-then run the step11 client
+Part 4 (late addition to the series):
+[MCP Authorization With Dynamic Client Registration](https://blog.christianposta.com/understanding-mcp-authorization-with-dynamic-client-registration/)
 
-uv run step11
-
-to run with mcp-inspector, 
-
-* you'll need to run agentgateway with config.yaml
-* uv run step10 --env keycloak_proxy.env
-* run mcp-inspector UI (note, some of the auth stuff is broken, at the moment, use this: https://github.com/christian-posta/mcp-inspector/tree/ceposta-patches)
-* then follow the step by step auth flow
-
-mcp scopes issue:
-https://github.com/modelcontextprotocol/inspector/issues/587
 
 ## Overview
 
@@ -169,6 +152,29 @@ uv run step10 --env keycloak_proxy.env
 ```
 
 If the env file or environment variables are missing, the server will fall back to sensible defaults (localhost:8080, etc).
+
+### Notes for running step11
+
+* you will need to run step10 mcp server 
+* you will have to allow anonymous client registration:
+* add trusted hosts (check keycloak logs for the right IP)
+* for trusted host policy, you don't need matching on URI
+* allowable scopes for mcp:read, etc and aud mapper
+* then run the step11 client
+
+```bash
+uv run step11
+```
+
+To run with mcp-inspector
+
+* you'll need to run agentgateway with config.yaml
+* uv run step10 --env keycloak_proxy.env
+* run mcp-inspector UI (note, some of the auth stuff is broken, at the moment, use this: https://github.com/christian-posta/mcp-inspector/tree/ceposta-patches)
+* then follow the step by step auth flow
+
+mcp scopes issue:
+https://github.com/modelcontextprotocol/inspector/issues/587
 
 ### Token Generation
 
