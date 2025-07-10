@@ -8,6 +8,12 @@ This repo is a companion to the in-depth, step-by-step blog posts on "MCP Author
 * [Understanding MCP Authorization, Step by Step, Part Two](https://blog.christianposta.com/understanding-mcp-authorization-step-by-step-part-two/)
 * [Understanding MCP Authorization, Step by Step, Part Three](https://blog.christianposta.com/understanding-mcp-authorization-step-by-step-part-three/)
 
+Part 4 (not published yet)
+For step 11,
+you will have to allow anonymous client registration:
+* add trusted hosts
+* for trusted host policy, you don't need matching on URI
+* allowable scopes for mcp:read, etc and aud mapper
 
 ## Overview
 
