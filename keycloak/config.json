@@ -22,6 +22,32 @@
         "default": ["echo-mcp-server-audience"],
         "optional": ["mcp:read", "mcp:tools", "mcp:prompts"]
       }
+    },
+    {
+      "clientId": "echo-mcp-server",
+      "name": "Echo MCP Server",
+      "type": "confidential", 
+      "enabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "tokenExchange": {
+        "enabled": true
+      },
+      "clientSecret": "PLOs4j6ti521kb5ZVVVwi5GWi9eDYTwq",      
+      "roles": [
+        {
+          "name": "tools",
+          "description": "Can call tools"
+        },
+        {
+          "name": "prompts",
+          "description": "Can call prompts"
+        },
+        {
+          "name": "read-only",
+          "description": "Can read resources"
+        }
+      ]
     }
   ],
   "clientScopes": [
@@ -52,7 +78,13 @@
       "attributes": {
         "include.in.token.scope": "true",
         "display.on.consent.screen": "true"
-      }
+      },
+      "roles": [
+        {
+          "client": "echo-mcp-server",
+          "role": "read-only"
+        }
+      ]
     },
     {
       "name": "mcp:tools",
@@ -61,7 +93,13 @@
       "attributes": {
         "include.in.token.scope": "true",
         "display.on.consent.screen": "true"
-      }
+      },
+      "roles": [
+        {
+          "client": "echo-mcp-server",
+          "role": "tools"
+        }
+      ]
     },
     {
       "name": "mcp:prompts",
@@ -70,7 +108,13 @@
       "attributes": {
         "include.in.token.scope": "true",
         "display.on.consent.screen": "true"
-      }
+      },
+      "roles": [
+        {
+          "client": "echo-mcp-server",
+          "role": "prompts"
+        }
+      ]
     }
   ],
   "users": [
@@ -82,7 +126,10 @@
       "enabled": true,
       "emailVerified": true,
       "password": "admin123",
-      "temporary": false
+      "temporary": false,
+      "clientRoles": {
+        "echo-mcp-server": ["tools", "prompts", "read-only"]
+      }
     },
     {
       "username": "mcp-user",
@@ -92,7 +139,10 @@
       "enabled": true,
       "emailVerified": true,
       "password": "user123",
-      "temporary": false
+      "temporary": false,
+      "clientRoles": {
+        "echo-mcp-server": ["tools", "read-only"]
+      }
     },
     {
       "username": "mcp-readonly",
@@ -102,7 +152,10 @@
       "enabled": true,
       "emailVerified": true,
       "password": "readonly123",
-      "temporary": false
+      "temporary": false,
+      "clientRoles": {
+        "echo-mcp-server": ["read-only"]
+      }
     }
   ]
 } 

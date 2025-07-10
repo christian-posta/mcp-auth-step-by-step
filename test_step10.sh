@@ -123,6 +123,54 @@ decode_jwt() {
     print_info "  AZP: $azp" >&2
 }
 
+# Helper function to extract 'scope' claim from JWT
+extract_scope_claim() {
+    local token=$1
+    IFS='.' read -r _ payload_b64 _ <<< "$token"
+    payload_b64_padded=$(printf '%s' "$payload_b64" | sed 's/-/+/g; s/_/\//g')
+    while [ $((${#payload_b64_padded} % 4)) -ne 0 ]; do
+        payload_b64_padded="${payload_b64_padded}="
+    done
+    local scope=$(echo "$payload_b64_padded" | base64 -d 2>/dev/null | jq -r '.scope // empty' 2>/dev/null)
+    echo "$scope"
+}
+
+# Assertion function for scopes
+assert_scopes() {
+    local token="$1"
+    local expected_scopes="$2"
+    local user="$3"
+    local actual_scopes=$(extract_scope_claim "$token")
+    print_info "User: $user"
+    print_info "Expected scopes: $expected_scopes"
+    print_info "Actual scopes:   $actual_scopes"
+    if [[ "$actual_scopes" != "$expected_scopes" ]]; then
+        print_error "Scope assertion failed for $user: expected '$expected_scopes', got '$actual_scopes'"
+        exit 1
+    else
+        print_status "Scope assertion passed for $user: $actual_scopes"
+    fi
+}
+
+# Assertion function for mcp: scopes only
+assert_mcp_scopes() {
+    local token="$1"
+    local expected_mcp_scopes="$2" # e.g. "mcp:read mcp:tools"
+    local user="$3"
+    local actual_scopes=$(extract_scope_claim "$token")
+    local actual_mcp_scopes=$(for s in $actual_scopes; do [[ $s == mcp:* ]] && echo $s; done | sort | xargs)
+    local expected_sorted=$(for s in $expected_mcp_scopes; do echo $s; done | sort | xargs)
+    print_info "User: $user"
+    print_info "Expected mcp: scopes: $expected_sorted"
+    print_info "Actual mcp: scopes:   $actual_mcp_scopes"
+    if [[ "$actual_mcp_scopes" != "$expected_sorted" ]]; then
+        print_error "MCP scope assertion failed for $user: expected '$expected_sorted', got '$actual_mcp_scopes'"
+        exit 1
+    else
+        print_status "MCP scope assertion passed for $user: $actual_mcp_scopes"
+    fi
+}
+
 # Cleanup function to stop MCP server
 cleanup() {
     if [ ! -z "$MCP_SERVER_PID" ]; then
@@ -489,6 +537,7 @@ main() {
     fi
     
     decode_jwt "$admin_token"
+    assert_mcp_scopes "$admin_token" "mcp:read mcp:tools mcp:prompts" "mcp-admin"
     
     # Test azp verification for admin token
     test_azp_verification "$admin_token" "mcp-test-client"
@@ -505,13 +554,14 @@ main() {
     print_info "=== Testing with regular user (limited access) ==="
     
     # Get user token
-    user_token=$(get_token "mcp-user" "user123" "openid profile email mcp:read mcp:tools")
+    user_token=$(get_token "mcp-user" "user123" "openid profile email mcp:read mcp:tools mcp:prompts")
     if [ $? -ne 0 ]; then
         print_error "Failed to get user token"
         exit 1
     fi
     
     decode_jwt "$user_token"
+    assert_mcp_scopes "$user_token" "mcp:read mcp:tools" "mcp-user"
     
     # Test azp verification for user token
     test_azp_verification "$user_token" "mcp-test-client"
@@ -528,13 +578,14 @@ main() {
     print_info "=== Testing with readonly user (minimal access) ==="
     
     # Get readonly token
-    readonly_token=$(get_token "mcp-readonly" "readonly123" "openid profile email mcp:read")
+    readonly_token=$(get_token "mcp-readonly" "readonly123" "openid profile email mcp:read mcp:tools mcp:prompts")
     if [ $? -ne 0 ]; then
         print_error "Failed to get readonly token"
         exit 1
     fi
     
     decode_jwt "$readonly_token"
+    assert_mcp_scopes "$readonly_token" "mcp:read" "mcp-readonly"
     
     # Test azp verification for readonly token
     test_azp_verification "$readonly_token" "mcp-test-client"
@@ -560,17 +611,18 @@ main() {
         echo "$protected_resource" | jq '.'
     fi
     
-    # Test Keycloak's authorization server metadata (RFC8414) - should be accessible via the link from protected resource
-    local auth_server_url=$(echo "$protected_resource" | jq -r '.authorization_servers[0] // empty')
-    if [ ! -z "$auth_server_url" ]; then
-        print_info "Testing Keycloak authorization server metadata at: $auth_server_url"
-        local auth_server=$(curl -s "$auth_server_url")
-        if echo "$auth_server" | grep -q "issuer"; then
-            print_status "Keycloak authorization server metadata endpoint working"
-            echo "$auth_server" | jq '.'
+    # Test Keycloak's authorization server metadata (RFC8414)
+    local auth_server_base=$(echo "$protected_resource" | jq -r '.authorization_servers[0] // empty')
+    if [ ! -z "$auth_server_base" ]; then
+        local oauth_metadata_url="${auth_server_base}/.well-known/oauth-authorization-server"
+        print_info "Testing Keycloak OAuth 2.0 Authorization Server Metadata at: $oauth_metadata_url"
+        local oauth_metadata=$(curl -s "$oauth_metadata_url")
+        if echo "$oauth_metadata" | grep -q '"issuer"'; then
+            print_status "Keycloak OAuth 2.0 Authorization Server metadata endpoint working"
+            echo "$oauth_metadata" | jq '.'
         else
-            print_error "Keycloak authorization server metadata endpoint failed"
-            echo "$auth_server" | jq '.'
+            print_error "Keycloak OAuth 2.0 Authorization Server metadata endpoint failed"
+            echo "$oauth_metadata" | jq '.'
         fi
     else
         print_error "No authorization server URL found in protected resource metadata"

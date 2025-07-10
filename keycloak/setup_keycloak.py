@@ -231,6 +231,41 @@ class KeycloakSetup:
                 if scope_id:
                     for mapper in scope_config['mappers']:
                         self.add_scope_mapper(realm_name, scope_id, mapper)
+
+            # Add role scope mappings if 'roles' is specified
+            if 'roles' in scope_config and scope_config['roles']:
+                scope_id = self.get_client_scope_id(realm_name, scope_name)
+                if scope_id:
+                    for role_assoc in scope_config['roles']:
+                        client = role_assoc['client']
+                        role = role_assoc['role']
+                        # Get client UUID
+                        client_uuid = self.get_client_uuid(realm_name, client)
+                        if not client_uuid:
+                            self.log('ERROR', f'Client {client} not found for scope mapping')
+                            continue
+                        # Get role details
+                        try:
+                            response = self.session.get(
+                                f"{self.admin_base_url}/realms/{realm_name}/clients/{client_uuid}/roles/{role}"
+                            )
+                            response.raise_for_status()
+                            role_data = response.json()
+                        except requests.exceptions.RequestException as e:
+                            self.log('ERROR', f'Failed to get role {role} for client {client}: {e}')
+                            continue
+                        # Add scope mapping
+                        try:
+                            response = self.session.post(
+                                f"{self.admin_base_url}/realms/{realm_name}/client-scopes/{scope_id}/scope-mappings/clients/{client_uuid}",
+                                json=[role_data]
+                            )
+                            if response.status_code not in (204, 201):
+                                self.log('ERROR', f'Failed to add scope mapping for role {role} to scope {scope_name}: {response.text}')
+                            else:
+                                self.log('SUCCESS', f'Added scope mapping: {role} to client scope {scope_name}')
+                        except requests.exceptions.RequestException as e:
+                            self.log('ERROR', f'Failed to add scope mapping for role {role} to scope {scope_name}: {e}')
                         
             return True
             
@@ -718,10 +753,13 @@ class KeycloakSetup:
         if not self.create_realm(config['realm']):
             return False
             
-        # Step 2: Create client scopes
+        # Step 2: Create client scopes (without role mappings)
         self.log('INFO', 'Creating client scopes...')
         for scope in config.get('clientScopes', []):
-            if not self.create_client_scope(realm_name, scope):
+            # Remove roles before creating the scope
+            scope_copy = dict(scope)
+            scope_copy.pop('roles', None)
+            if not self.create_client_scope(realm_name, scope_copy):
                 return False
                 
         # Step 3: Create clients
@@ -745,7 +783,44 @@ class KeycloakSetup:
                 if not self.assign_client_scope(realm_name, client_id, scope_name, 'optional'):
                     self.log('WARNING', f'Failed to assign optional scope {scope_name} to client {client_id}')
                     
-        # Step 5: Create users
+        # Step 5: Add role scope mappings (second pass)
+        self.log('INFO', 'Adding role scope mappings to client scopes...')
+        for scope in config.get('clientScopes', []):
+            if 'roles' in scope and scope['roles']:
+                scope_id = self.get_client_scope_id(realm_name, scope['name'])
+                if scope_id:
+                    for role_assoc in scope['roles']:
+                        client = role_assoc['client']
+                        role = role_assoc['role']
+                        # Get client UUID
+                        client_uuid = self.get_client_uuid(realm_name, client)
+                        if not client_uuid:
+                            self.log('ERROR', f'Client {client} not found for scope mapping')
+                            continue
+                        # Get role details
+                        try:
+                            response = self.session.get(
+                                f"{self.admin_base_url}/realms/{realm_name}/clients/{client_uuid}/roles/{role}"
+                            )
+                            response.raise_for_status()
+                            role_data = response.json()
+                        except requests.exceptions.RequestException as e:
+                            self.log('ERROR', f'Failed to get role {role} for client {client}: {e}')
+                            continue
+                        # Add scope mapping
+                        try:
+                            response = self.session.post(
+                                f"{self.admin_base_url}/realms/{realm_name}/client-scopes/{scope_id}/scope-mappings/clients/{client_uuid}",
+                                json=[role_data]
+                            )
+                            if response.status_code not in (204, 201):
+                                self.log('ERROR', f'Failed to add scope mapping for role {role} to scope {scope['name']}: {response.text}')
+                            else:
+                                self.log('SUCCESS', f'Added scope mapping: {role} to client scope {scope['name']}')
+                        except requests.exceptions.RequestException as e:
+                            self.log('ERROR', f'Failed to add scope mapping for role {role} to scope {scope['name']}: {e}')
+        
+        # Step 6: Create users
         self.log('INFO', 'Creating users...')
         for user in config.get('users', []):
             if not self.create_user(realm_name, user):

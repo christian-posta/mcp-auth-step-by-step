@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Keycloak Configuration
-KEYCLOAK_URL = "http://localhost:9090"
+KEYCLOAK_URL = "http://localhost:8080"
 KEYCLOAK_REALM = "mcp-realm"
 JWT_ISSUER = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}"
 JWT_AUDIENCE = ["echo-mcp-server"]  # Accept tokens with echo-mcp-server audience
