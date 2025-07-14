@@ -12,6 +12,27 @@ Part 4 (late addition to the series):
 [MCP Authorization With Dynamic Client Registration](https://blog.christianposta.com/understanding-mcp-authorization-with-dynamic-client-registration/)
 
 
+## MCP Authorization Specification Requirements
+
+The table below shows support for OAuth RFCs required by the MCP authorization specification across major identity providers.
+
+### RFC Requirements Summary:
+- **PKCE**: Proof Key for Code Exchange (OAuth 2.1 requirement)
+- **RFC 8414**: OAuth 2.0 Authorization Server Metadata
+- **RFC 7591**: OAuth 2.0 Dynamic Client Registration Protocol
+- **RFC 8707**: Resource Indicators for OAuth 2.0
+
+| Identity Provider | PKCE | RFC 8414 | RFC 7591 | RFC 8707 |
+|-------------------|------|----------|----------|----------|
+| **Okta** | Yes | Yes | Yes | N0 |
+| **Auth0** | Yes | Yes | Kinda | No |
+| **Keycloak** | Yes | Yes | Yes | No |
+| **Ping Federate** | Yes | Yes | Yes | Yes |
+| **ForgeRock** | Yes | Yes | Yes | Kinda |
+| **Google OAuth** | Yes | No | No | No |
+| **Microsoft Entra** | Yes | Yes | No | No |
+
+
 ## Overview
 
 The project shows how to build a secure MCP server with:
