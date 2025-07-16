@@ -1,0 +1,20 @@
+# Stage 1: Get the official SPIRE agent binary
+FROM ghcr.io/spiffe/spire-agent:1.12.4 as spire-agent
+
+# Stage 2: Build a debug-friendly Alpine image
+FROM alpine:3.19
+
+# Install curl and libc6-compat (for glibc compatibility)
+RUN apk add --no-cache curl libc6-compat
+
+# Download grpcurl (choose the correct arch: arm64 for Apple Silicon, amd64 for Intel)
+RUN ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') && \
+    curl -L "https://github.com/fullstorydev/grpcurl/releases/download/v1.8.7/grpcurl_1.8.7_linux_${ARCH}.tar.gz" | tar xz -C /usr/local/bin
+
+# Copy the SPIRE agent binary and supporting files
+COPY --from=spire-agent /opt/spire /opt/spire
+
+WORKDIR /opt/spire
+
+# Default entrypoint: run the agent with config (same as official image)
+ENTRYPOINT ["/opt/spire/bin/spire-agent", "run", "-config", "/etc/spire/agent/agent.conf"]

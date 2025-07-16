@@ -1,0 +1,25 @@
+services:
+  spire-server:
+    image: ghcr.io/spiffe/spire-server:1.12.4
+    container_name: spire-server
+    ports:
+      - "18081:8081"
+    volumes:
+      - ./server_container.conf:/etc/spire/server/server.conf:ro
+      - ./dummy_upstream_ca.crt:/etc/spire/server/dummy_upstream_ca.crt:ro
+      - ./dummy_upstream_ca.key:/etc/spire/server/dummy_upstream_ca.key:ro
+    command: ["-config", "/etc/spire/server/server.conf"]
+
+  spire-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.spire-agent-debug
+    container_name: spire-agent
+    depends_on:
+      - spire-server
+    volumes:
+      - ./agent_container.conf:/etc/spire/agent/agent.conf:ro
+      - ./dummy_root_ca.crt:/etc/spire/agent/dummy_root_ca.crt:ro
+      - ../supporting/spiffe/go-spiffe/proto/spiffe/workload:/opt/spire/proto
+      - /tmp/spire-agent-public:/opt/spire/sockets
+    # command: ["-config", "/etc/spire/agent/agent.conf"]
