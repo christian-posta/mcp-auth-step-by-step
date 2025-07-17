@@ -10,13 +10,15 @@ else
   echo "All certificates found."
 fi
 
-# 1. Create the shared network if it doesn't exist
-echo "Ensuring spire-network exists..."
-if ! docker network ls | grep -q spire-network; then
-  echo "Creating spire-network..."
-  docker network create spire-network
+# 1. Check if keycloak_keycloak-shared-network exists (should be created by Keycloak)
+echo "Checking for keycloak_keycloak-shared-network..."
+if ! docker network ls | grep -q keycloak_keycloak-shared-network; then
+  echo "ERROR: keycloak_keycloak-shared-network not found!"
+  echo "Please start Keycloak first to create the shared network."
+  echo "Run: cd ../keycloak && docker compose up -d"
+  exit 1
 else
-  echo "spire-network already exists."
+  echo "keycloak_keycloak-shared-network found."
 fi
 
 # 2. Start the server and OIDC discovery provider (everything except agent)

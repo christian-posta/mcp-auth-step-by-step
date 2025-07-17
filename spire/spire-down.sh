@@ -31,36 +31,23 @@ fi
 
 # 2. Remove SPIRE volumes
 echo "Removing SPIRE volumes..."
-if docker volume ls | grep -q spire-server-socket; then
+if docker volume ls | grep -q spire_spire-server-socket; then
   echo "Removing spire-server-socket volume..."
-  docker volume rm spire-server-socket
+  docker volume rm spire_spire-server-socket
 fi
 
-# 3. Check if spire-network is still in use by other containers
-echo "Checking spire-network usage..."
-NETWORK_USERS=$(docker network inspect spire-network 2>/dev/null | jq -r '.[0].Containers | keys | length' 2>/dev/null || echo "0")
-
-if [[ "$NETWORK_USERS" -gt 0 ]]; then
-  echo "spire-network is still being used by $NETWORK_USERS container(s)."
-  echo "Checking which containers are using the network..."
-  
-  # List containers using the network
-  docker network inspect spire-network 2>/dev/null | jq -r '.[0].Containers | to_entries[] | "  - \(.value.Name) (\(.key))"' 2>/dev/null || echo "  Unable to list containers"
-  
-  echo "Keeping spire-network as it's still in use."
-else
-  echo "spire-network is not being used by any containers."
-  echo "Removing spire-network..."
-  docker network rm spire-network 2>/dev/null || echo "Network already removed or doesn't exist."
-fi
+# 3. Note about network (owned by Keycloak)
+echo ""
+echo "Note: keycloak_keycloak-shared-network is owned by Keycloak and will not be removed."
+echo "To remove the network, stop Keycloak first: cd ../keycloak && docker compose down"
 
 echo ""
 echo "SPIRE stack shutdown complete!"
 echo ""
 echo "Remaining resources:"
 echo "  - Certificates: $(ls -1 *.pem *.crt *.key 2>/dev/null | wc -l | tr -d ' ') files"
-echo "  - spire-network: $(docker network ls | grep -c spire-network || echo "0") instances"
+echo "  - keycloak_keycloak-shared-network: $(docker network ls | grep -c keycloak_keycloak-shared-network || echo "0") instances"
 echo ""
 echo "To completely clean up, you can also:"
 echo "  - Remove certificates: rm *.pem *.crt *.key"
-echo "  - Remove network (if not in use): docker network rm spire-network" 
+echo "  - Remove network (after stopping Keycloak): cd ../keycloak && docker compose down" 

@@ -11,7 +11,7 @@ services:
       - spire-server-socket:/tmp/spire-server/private
     command: ["-config", "/etc/spire/server/server.conf"]
     networks:
-      - spire-network
+      - keycloak_keycloak-shared-network
 
   spire-oidc-discovery:
     image: ghcr.io/spiffe/oidc-discovery-provider:1.12.4
@@ -26,7 +26,7 @@ services:
     working_dir: /opt/spire/conf
     command: ["-config", "oidc-discovery-provider.conf"]
     networks:
-      - spire-network
+      - keycloak_keycloak-shared-network
 
   spire-agent:
     image: ghcr.io/spiffe/spire-agent:1.12.4
@@ -37,12 +37,12 @@ services:
       - ./agent_container.conf:/etc/spire/agent/agent.conf:ro
       - ./dummy_root_ca.crt:/etc/spire/agent/dummy_root_ca.crt:ro
     networks:
-      - spire-network
+      - keycloak_keycloak-shared-network
 
 volumes:
   spire-server-socket:
 
 networks:
-  spire-network:
-    driver: bridge
+  keycloak_keycloak-shared-network:
+    external: true
 
