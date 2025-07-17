@@ -35,7 +35,7 @@ echo "$JWT_OUTPUT"
 prompt_continue
 
 # 3. Extract and decode JWT SVID
-JWT=$(echo "$JWT_OUTPUT" | awk '/^token\(/ {getline; gsub(/^ +/, ""); print $0}')
+JWT=$(echo "$JWT_OUTPUT" | awk '/^token\(/ {getline; gsub(/^[[:space:]]+/, ""); gsub(/[[:space:]]+$/, ""); print $0}')
 
 decode_jwt() {
   jwt="$1"
@@ -47,8 +47,17 @@ decode_jwt() {
   echo "$payload"
 }
 
+echo "JWT: $JWT"
 if [ -n "$JWT" ]; then
   echo
   echo "Decoded JWT SVID:"
   decode_jwt "$JWT"
+  
+  # Extract and display expiration time
+  EXP=$(echo "$JWT" | cut -d. -f2 | tr '_-' '/+' | awk '{ l=length($0)%4; if(l>0) { printf "%s", $0; for(i=1;i<=4-l;i++) printf "="; print "" } else print $0 }' | base64 -d 2>/dev/null | jq -r '.exp')
+  if [ -n "$EXP" ] && [ "$EXP" != "null" ]; then
+    EXP_DATE=$(date -r "$EXP" 2>/dev/null || date -d "@$EXP" 2>/dev/null)
+    echo
+    echo "Expires: $EXP_DATE (Unix timestamp: $EXP)"
+  fi
 fi 

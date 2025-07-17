@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e
 
+# 0. Check for required dummy certificates
+echo "Checking for required dummy certificates..."
+if [[ ! -f "dummy_upstream_ca.key" || ! -f "dummy_upstream_ca.crt" || ! -f "dummy_root_ca.crt" ]]; then
+  echo "Missing required dummy certificates. Generating them..."
+  ./generate_dummy_certs.sh
+else
+  echo "Dummy certificates found."
+fi
+
 # 1. Start the server
 if ! docker compose ps | grep -q spire-server; then
   echo "Starting spire-server..."

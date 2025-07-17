@@ -5,7 +5,7 @@ This folder contains a minimal Docker Compose setup for running SPIRE Server and
 ## Overview
 - **Ephemeral setup**: All data is stored inside the containers and will be lost if the containers are removed or restarted.
 - **SPIRE Server and Agent run in separate containers**.
-- **SPIRE Agent exposes the Workload API over TCP** (unauthenticated, for demo/dev only) so you can fetch JWT SVIDs from your host.
+- **SPIRE Agent exposes the Workload API over TCP** (unauthenticated, for demo/dev only) 
 - **Default trust domain**: `example.org`
 
 ## Ports and Endpoints
@@ -13,7 +13,7 @@ This folder contains a minimal Docker Compose setup for running SPIRE Server and
 | Service         | Host Port | Container Port | Purpose/How to Use                        |
 |-----------------|-----------|---------------|-------------------------------------------|
 | SPIRE Server    | 18081     | 8081          | Management API (token generation, entries) |
-| SPIRE Agent API | 18082     | 18082         | Workload API (for MCP client JWT SVID)     |
+| SPIRE Agent API |           |               | Workload API (UDS, no exposed TCP)     |
 
 - **SPIRE Server API**: `localhost:18081`
 - **SPIRE Agent Workload API (TCP)**: `localhost:18082`
@@ -22,23 +22,15 @@ This folder contains a minimal Docker Compose setup for running SPIRE Server and
 
 1. **Start the stack:**
    ```bash
-   docker compose up -d
+   ./start-spire.sh
    ```
-2. **Generate a join token:**
+2. **Fetch a JWT SVID from your MCP client:**
    ```bash
-   docker compose exec spire-server /opt/spire/bin/spire-server token generate -spiffeID spiffe://example.org/agent
+   ./get-svid.sh
    ```
-   Save the token for use with the agent.
-3. **Register a workload (example):**
-   ```bash
-   docker compose exec spire-server /opt/spire/bin/spire-server entry create \
-     -parentID spiffe://example.org/agent \
-     -spiffeID spiffe://example.org/workload \
-     -selector unix:uid:0
-   ```
-4. **Fetch a JWT SVID from your MCP client:**
-   - Connect to `localhost:18082` using the [SPIFFE Workload API](https://github.com/spiffe/go-spiffe/blob/main/v2/proto/spiffe/workload/workload.proto).
-   - Request a JWT SVID for the registered workload.
+
+   Inspect the token and verify it looks right. 
+
 
 ## How to Change the Trust Domain
 
@@ -47,11 +39,7 @@ This folder contains a minimal Docker Compose setup for running SPIRE Server and
    - `agent_container.conf`: Change the `trust_domain` and update `trust_bundle_path` if needed.
 2. **Update registration commands:**
    - Use the new trust domain in all `spiffe://<trust-domain>/...` IDs.
-3. **Restart the stack:**
-   ```bash
-   docker compose down -v
-   docker compose up -d
-   ```
+
 
 ## Notes
 - This setup is for demo/dev only. The Workload API is exposed over TCP without authentication.
