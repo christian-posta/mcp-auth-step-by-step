@@ -96,16 +96,16 @@ def manage_docker_compose():
     
     # Check if containers are running and stop them
     log("Checking for existing Keycloak containers...")
-    result = run_command("docker-compose ps", cwd=keycloak_dir, check=False)
+    result = run_command("docker compose ps", cwd=keycloak_dir, check=False)
     
     if "Up" in result.stdout:
         log("Stopping existing Keycloak containers...")
-        run_command("docker-compose down", cwd=keycloak_dir)
+        run_command("docker compose down", cwd=keycloak_dir)
         time.sleep(2)  # Give containers time to stop
     
     # Start fresh Keycloak
     log("Starting Keycloak with Docker Compose...")
-    run_command("docker-compose up -d", cwd=keycloak_dir)
+    run_command("docker compose up -d", cwd=keycloak_dir)
     
     return True
 
