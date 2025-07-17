@@ -8,7 +8,25 @@ services:
       - ./server_container.conf:/etc/spire/server/server.conf:ro
       - ./dummy_upstream_ca.crt:/etc/spire/server/dummy_upstream_ca.crt:ro
       - ./dummy_upstream_ca.key:/etc/spire/server/dummy_upstream_ca.key:ro
+      - spire-server-socket:/tmp/spire-server/private
     command: ["-config", "/etc/spire/server/server.conf"]
+    networks:
+      - spire-network
+
+  spire-oidc-discovery:
+    image: ghcr.io/spiffe/oidc-discovery-provider:1.12.4
+    container_name: spire-oidc-discovery
+    depends_on:
+      - spire-server
+    ports:
+      - "18443:8443"
+    volumes:
+      - ./oidc-discovery-provider.conf:/opt/spire/conf/oidc-discovery-provider.conf:ro
+      - spire-server-socket:/tmp/spire-server/private:ro
+    working_dir: /opt/spire/conf
+    command: ["-config", "oidc-discovery-provider.conf"]
+    networks:
+      - spire-network
 
   spire-agent:
     image: ghcr.io/spiffe/spire-agent:1.12.4
@@ -18,4 +36,13 @@ services:
     volumes:
       - ./agent_container.conf:/etc/spire/agent/agent.conf:ro
       - ./dummy_root_ca.crt:/etc/spire/agent/dummy_root_ca.crt:ro
+    networks:
+      - spire-network
+
+volumes:
+  spire-server-socket:
+
+networks:
+  spire-network:
+    driver: bridge
 

@@ -1,4 +1,5 @@
-**/dummy_*
+spire/dummy_*
+spire/oidc-https*
 supporting
 client_credentials.json
 token_*
