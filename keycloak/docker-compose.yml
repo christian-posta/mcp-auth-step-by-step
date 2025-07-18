@@ -8,4 +8,12 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
       - "8080:8080"
-    command: start-dev 
+    volumes:
+      - ./spiffe-svid-client-authenticator-1.0.0.jar:/opt/keycloak/providers/spiffe-svid-client-authenticator-1.0.0.jar:ro
+    command: start-dev
+    networks:
+      - keycloak-shared-network
+
+networks:
+  keycloak-shared-network:
+    driver: bridge 

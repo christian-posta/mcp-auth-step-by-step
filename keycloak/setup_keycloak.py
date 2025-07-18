@@ -376,20 +376,23 @@ class KeycloakSetup:
             # Set fullScopeAllowed from config (defaults to true if not specified)
             if 'fullScopeAllowed' in client_config:
                 client_data["fullScopeAllowed"] = client_config['fullScopeAllowed']
+            
+            # Add client secret if provided
+            if client_config.get('clientSecret'):
+                client_data["secret"] = client_config['clientSecret']
+            
+            # Set client authenticator type (defaults to "client-secret" if not specified)
+            client_data["clientAuthenticatorType"] = client_config.get('clientAuthenticatorType', 'client-secret')
+            
+            # Add token exchange settings for confidential clients
+            if client_config.get('tokenExchange', {}).get('enabled', False):
+                if "attributes" not in client_data:
+                    client_data["attributes"] = {}
+                client_data["attributes"]["token.exchange.standard.enabled"] = "true"
                 
-                # Add client secret if provided
-                if client_config.get('clientSecret'):
-                    client_data["secret"] = client_config['clientSecret']
-                
-                # Add token exchange settings for confidential clients
-                if client_config.get('tokenExchange', {}).get('enabled', False):
-                    if "attributes" not in client_data:
-                        client_data["attributes"] = {}
-                    client_data["attributes"]["token.exchange.standard.enabled"] = "true"
-                    
-                    refresh_setting = client_config.get('tokenExchange', {}).get('allowRefreshToken')
-                    if refresh_setting:
-                        client_data["attributes"]["token.exchange.refresh.enabled"] = refresh_setting
+                refresh_setting = client_config.get('tokenExchange', {}).get('allowRefreshToken')
+                if refresh_setting:
+                    client_data["attributes"]["token.exchange.refresh.enabled"] = refresh_setting
                         
             if self.debug:
                 self.log('DEBUG', f'Client data: {json.dumps(client_data, indent=2)}')

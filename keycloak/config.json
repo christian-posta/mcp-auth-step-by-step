@@ -24,6 +24,17 @@
       }
     },
     {
+      "clientId": "spiffe-test-client",
+      "name": "SPIFFE Test Client",
+      "type": "confidential",
+      "enabled": true,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-spiffe-jwt",
+      "directAccessGrantsEnabled": true,
+      "fullScopeAllowed": false
+    },     
+    {
       "clientId": "echo-mcp-server",
       "name": "Echo MCP Server",
       "type": "confidential", 

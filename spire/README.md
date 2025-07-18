@@ -29,8 +29,27 @@ This folder contains a minimal Docker Compose setup for running SPIRE Server and
    ./get-svid.sh
    ```
 
-   Inspect the token and verify it looks right. 
+Inspect the token and verify it looks right. 
 
+3. **Verify OIDC Discovery**
+   ```bash
+   curl http://localhost:18443/.well-known/openid-configuration   
+   ```
+
+4. **Verify JWKS**
+   ```bash
+   curl http://localhost:18443/keys
+   ```   
+Note, the SPIRE issuer for JWTs is:
+```text
+http://spire-server:8443
+```
+
+JWKS URL for keycloak:
+
+```
+http://spire-server:8443/keys
+```
 
 ## How to Change the Trust Domain
 
@@ -82,3 +101,10 @@ cp dummy_upstream_ca.crt dummy_root_ca.crt
 - Place these files in the `spire/` folder.
 - Make sure they are files, not directories.
 - Restart your containers after generating these files. 
+
+
+## Notes
+
+We cannot use identity brokering in keycloak because SPIRE does not implement authorization code which is a pre-req in keycloak to do brokering
+
+We can try using client-jwt, but Keycloak expects the isuser and subject to be the same (since it's client issued JWT). With SPIRE this will not be the case. 
