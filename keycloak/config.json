@@ -9,6 +9,22 @@
     "ssoSessionMaxLifespan": 72000,
     "offlineSessionIdleTimeout": 2592000
   },
+  "authenticationFlows": [
+    {
+      "name": "spiffe-clients",
+      "description": "SPIFFE-enabled client authentication flow",
+      "copyFrom": "clients",
+      "authenticators": [
+        {
+          "providerId": "client-spiffe-jwt",
+          "requirement": "ALTERNATIVE"
+        }
+      ],
+      "setAsDefault": {
+        "clientAuthentication": true
+      }
+    }
+  ],
   "clients": [
     {
       "clientId": "mcp-test-client",
@@ -32,7 +48,17 @@
       "serviceAccountsEnabled": true,
       "clientAuthenticatorType": "client-spiffe-jwt",
       "directAccessGrantsEnabled": true,
-      "fullScopeAllowed": false
+      "fullScopeAllowed": false,
+      "assignedScopes": {
+        "optional": ["mcp:read", "mcp:tools", "mcp:prompts"]
+      },
+      "attributes": {
+        "use.jwks.url": "true",
+        "jwks.url": "http://spire-oidc-discovery:8443/keys",
+        "client.secret.creation.time": "1640995200",
+        "backchannel.logout.session.required": "false",
+        "standard.token.exchange.enabled": "true"
+      }
     },     
     {
       "clientId": "echo-mcp-server",

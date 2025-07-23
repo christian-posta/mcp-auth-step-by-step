@@ -384,16 +384,23 @@ class KeycloakSetup:
             # Set client authenticator type (defaults to "client-secret" if not specified)
             client_data["clientAuthenticatorType"] = client_config.get('clientAuthenticatorType', 'client-secret')
             
+            # Initialize attributes if not already present
+            if "attributes" not in client_data:
+                client_data["attributes"] = {}
+            
+            # Add custom attributes from config
+            if 'attributes' in client_config:
+                for key, value in client_config['attributes'].items():
+                    client_data["attributes"][key] = str(value)  # Keycloak expects string values
+                    
             # Add token exchange settings for confidential clients
             if client_config.get('tokenExchange', {}).get('enabled', False):
-                if "attributes" not in client_data:
-                    client_data["attributes"] = {}
                 client_data["attributes"]["token.exchange.standard.enabled"] = "true"
                 
                 refresh_setting = client_config.get('tokenExchange', {}).get('allowRefreshToken')
                 if refresh_setting:
                     client_data["attributes"]["token.exchange.refresh.enabled"] = refresh_setting
-                        
+                    
             if self.debug:
                 self.log('DEBUG', f'Client data: {json.dumps(client_data, indent=2)}')
                         
@@ -428,10 +435,17 @@ class KeycloakSetup:
             response.raise_for_status()
             current_client = response.json()
             
+            # Initialize attributes if not already present
+            if "attributes" not in current_client:
+                current_client["attributes"] = {}
+                
+            # Add custom attributes from config
+            if 'attributes' in client_config:
+                for key, value in client_config['attributes'].items():
+                    current_client["attributes"][key] = str(value)  # Keycloak expects string values
+            
             # Update attributes for token exchange
             if client_config.get('tokenExchange', {}).get('enabled', False):
-                if "attributes" not in current_client:
-                    current_client["attributes"] = {}
                 current_client["attributes"]["token.exchange.standard.enabled"] = "true"
                 
                 refresh_setting = client_config.get('tokenExchange', {}).get('allowRefreshToken')
@@ -664,6 +678,155 @@ class KeycloakSetup:
             self.log('ERROR', f'Failed to assign role {role_name} from client {client_id} to user {username}: {e}')
             return False
             
+    def copy_authentication_flow(self, realm_name: str, source_flow: str, new_flow_name: str) -> bool:
+        """Copy an existing authentication flow."""
+        self.log('INFO', f'Copying authentication flow from {source_flow} to {new_flow_name}...')
+        
+        try:
+            copy_url = f"{self.admin_base_url}/realms/{realm_name}/authentication/flows/{source_flow}/copy"
+            copy_data = {"newName": new_flow_name}
+            
+            response = self.session.post(copy_url, json=copy_data)
+            
+            if response.status_code == 201:
+                self.log('SUCCESS', f'Authentication flow {new_flow_name} created from {source_flow}')
+                return True
+            elif response.status_code == 409:
+                self.log('WARNING', f'Authentication flow {new_flow_name} already exists, skipping creation')
+                return True
+            else:
+                self.log('ERROR', f'Failed to copy authentication flow. Status: {response.status_code}')
+                self.log('ERROR', f'Response: {response.text}')
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log('ERROR', f'Failed to copy authentication flow {new_flow_name}: {e}')
+            return False
+            
+    def add_authenticator_to_flow(self, realm_name: str, flow_name: str, provider_id: str) -> bool:
+        """Add an authenticator to an authentication flow."""
+        self.log('INFO', f'Adding authenticator {provider_id} to flow {flow_name}...')
+        
+        try:
+            add_exec_url = f"{self.admin_base_url}/realms/{realm_name}/authentication/flows/{flow_name}/executions/execution"
+            exec_data = {"provider": provider_id}
+            
+            response = self.session.post(add_exec_url, json=exec_data)
+            
+            if response.status_code == 201:
+                self.log('SUCCESS', f'Authenticator {provider_id} added to flow {flow_name}')
+                return True
+            else:
+                self.log('ERROR', f'Failed to add authenticator. Status: {response.status_code}')
+                self.log('ERROR', f'Response: {response.text}')
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log('ERROR', f'Failed to add authenticator {provider_id} to flow {flow_name}: {e}')
+            return False
+            
+    def update_authenticator_requirement(self, realm_name: str, flow_name: str, provider_id: str, requirement: str) -> bool:
+        """Update the requirement level of an authenticator in a flow."""
+        self.log('INFO', f'Setting authenticator {provider_id} requirement to {requirement} in flow {flow_name}...')
+        
+        try:
+            # Get executions
+            get_exec_url = f"{self.admin_base_url}/realms/{realm_name}/authentication/flows/{flow_name}/executions"
+            response = self.session.get(get_exec_url)
+            response.raise_for_status()
+            
+            executions = response.json()
+            
+            # Find the specific authenticator execution
+            target_execution = next((ex for ex in executions if ex.get("providerId") == provider_id), None)
+            
+            if not target_execution:
+                self.log('ERROR', f'Authenticator {provider_id} not found in flow {flow_name}')
+                return False
+                
+            # Update requirement
+            update_data = {
+                "id": target_execution["id"],
+                "requirement": requirement
+            }
+            
+            response = self.session.put(get_exec_url, json=update_data)
+            
+            if response.status_code == 204:
+                self.log('SUCCESS', f'Authenticator {provider_id} requirement set to {requirement}')
+                return True
+            else:
+                self.log('ERROR', f'Failed to update authenticator requirement. Status: {response.status_code}')
+                self.log('ERROR', f'Response: {response.text}')
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log('ERROR', f'Failed to update authenticator requirement: {e}')
+            return False
+            
+    def set_default_client_authentication_flow(self, realm_name: str, flow_name: str) -> bool:
+        """Set a flow as the default client authentication flow for the realm."""
+        self.log('INFO', f'Setting {flow_name} as default client authentication flow...')
+        
+        try:
+            # Get current realm configuration
+            realm_url = f"{self.admin_base_url}/realms/{realm_name}"
+            response = self.session.get(realm_url)
+            response.raise_for_status()
+            
+            realm_config = response.json()
+            realm_config["clientAuthenticationFlow"] = flow_name
+            
+            # Update realm configuration
+            response = self.session.put(realm_url, json=realm_config)
+            
+            if response.status_code == 204:
+                self.log('SUCCESS', f'Default client authentication flow set to {flow_name}')
+                return True
+            else:
+                self.log('ERROR', f'Failed to update realm configuration. Status: {response.status_code}')
+                self.log('ERROR', f'Response: {response.text}')
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log('ERROR', f'Failed to set default client authentication flow: {e}')
+            return False
+            
+    def setup_authentication_flows(self, realm_name: str, flows_config: List[Dict[str, Any]]) -> bool:
+        """Set up authentication flows from configuration."""
+        self.log('INFO', 'Setting up authentication flows...')
+        
+        for flow_config in flows_config:
+            flow_name = flow_config['name']
+            
+            # Copy from existing flow if specified
+            if 'copyFrom' in flow_config:
+                if not self.copy_authentication_flow(realm_name, flow_config['copyFrom'], flow_name):
+                    return False
+                    
+            # Add authenticators
+            for authenticator in flow_config.get('authenticators', []):
+                provider_id = authenticator['providerId']
+                requirement = authenticator.get('requirement', 'REQUIRED')
+                
+                # Add authenticator to flow
+                if not self.add_authenticator_to_flow(realm_name, flow_name, provider_id):
+                    return False
+                    
+                # Update requirement if not default
+                if requirement != 'REQUIRED':
+                    if not self.update_authenticator_requirement(realm_name, flow_name, provider_id, requirement):
+                        return False
+                        
+            # Set as default flows if specified
+            defaults = flow_config.get('setAsDefault', {})
+            if defaults.get('clientAuthentication', False):
+                if not self.set_default_client_authentication_flow(realm_name, flow_name):
+                    return False
+                    
+        self.log('SUCCESS', 'Authentication flows setup completed')
+        return True
+            
     def get_client_secret(self, realm_name: str, client_id: str) -> Optional[str]:
         """Get client secret."""
         try:
@@ -829,6 +992,12 @@ class KeycloakSetup:
             if not self.create_user(realm_name, user):
                 return False
                 
+        # Step 7: Set up authentication flows
+        self.log('INFO', 'Setting up authentication flows...')
+        if 'authenticationFlows' in config:
+            if not self.setup_authentication_flows(realm_name, config['authenticationFlows']):
+                return False
+                
         self.log('SUCCESS', 'Keycloak setup completed successfully!')
         return True
         
@@ -853,6 +1022,10 @@ class KeycloakSetup:
                 secret = self.get_client_secret(realm_name, client_id)
                 if secret:
                     print(f"    - Client secret: {secret}")
+            if 'attributes' in client:
+                print(f"    - Custom attributes:")
+                for key, value in client['attributes'].items():
+                    print(f"      • {key}: {value}")
                     
         print(f"\n{Colors.WHITE}Client Scopes:{Colors.NC}")
         for scope in config.get('clientScopes', []):
@@ -864,6 +1037,17 @@ class KeycloakSetup:
             if 'clientRoles' in user:
                 for client_id, roles in user['clientRoles'].items():
                     print(f"    - {client_id}: {', '.join(roles)}")
+                    
+        print(f"\n{Colors.WHITE}Authentication Flows:{Colors.NC}")
+        for flow in config.get('authenticationFlows', []):
+            print(f"  • {flow['name']}")
+            if 'copyFrom' in flow:
+                print(f"    - Copied from: {flow['copyFrom']}")
+            if 'authenticators' in flow:
+                for auth in flow['authenticators']:
+                    print(f"    - Authenticator: {auth['providerId']} ({auth.get('requirement', 'REQUIRED')})")
+            if flow.get('setAsDefault', {}).get('clientAuthentication'):
+                print(f"    - Set as default client authentication flow: ✅")
                     
         print(f"\n{Colors.WHITE}Token Exchange Rules:{Colors.NC}")
         for rule in config.get('tokenExchangeRules', []):
