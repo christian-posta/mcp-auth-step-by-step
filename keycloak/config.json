@@ -24,7 +24,7 @@
       }
     },
     {
-      "clientId": "spiffe-test-client",
+      "clientId": "spiffe://example.org/mcp-test-client",
       "name": "SPIFFE Test Client",
       "type": "confidential",
       "enabled": true,

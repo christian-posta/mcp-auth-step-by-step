@@ -7,7 +7,7 @@ PARENT_SPIFFE_ID="spiffe://example.org/agent"
 AUDIENCE="http://localhost:8080/realms/mcp-realm"
 KEYCLOAK_URL="http://localhost:8080"
 KEYCLOAK_REALM="mcp-realm"
-CLIENT_ID="spiffe-test-client"
+CLIENT_ID="spiffe://example.org/mcp-test-client"
 
 prompt_continue() {
   read -r -p "Continue (Y/n)? " response
@@ -94,7 +94,7 @@ KEYCLOAK_RESPONSE=$(curl -s -X POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "client_id=$CLIENT_ID" \
   -d "grant_type=client_credentials" \
-  -d "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" \
+  -d "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:spiffe-svid-jwt" \
   -d "client_assertion=$JWT" \
   -d "scope=mcp:read mcp:tools mcp:prompts")
 

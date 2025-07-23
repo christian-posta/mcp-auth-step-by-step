@@ -40,16 +40,16 @@ Inspect the token and verify it looks right.
    ```bash
    curl http://localhost:18443/keys
    ```   
-Note, the SPIRE issuer for JWTs is:
-```text
-http://spire-server:8443
-```
 
-JWKS URL for keycloak:
+   Note, the SPIRE issuer for JWTs is:
+   ```text
+   http://spire-server:8443
+   ```
 
-```
-http://spire-server:8443/keys
-```
+   JWKS URL for keycloak:
+   ```
+   http://spire-oidc-discovery:8443/keys
+   ```
 
 ## How to Change the Trust Domain
 

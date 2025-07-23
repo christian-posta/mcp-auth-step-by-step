@@ -1,5 +1,6 @@
 spire/dummy_*
 spire/oidc-https*
+spire/keycloak_access_token.txt
 supporting
 client_credentials.json
 token_*
