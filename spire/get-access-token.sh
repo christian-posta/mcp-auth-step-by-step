@@ -35,6 +35,7 @@ else
   docker compose exec spire-server /opt/spire/bin/spire-server entry create \
     -parentID "$PARENT_SPIFFE_ID" \
     -spiffeID "$WORKLOAD_SPIFFE_ID" \
+    -jwtSVIDTTL 60 \
     -selector unix:uid:0
   echo "✅ Workload entry created."
 fi
