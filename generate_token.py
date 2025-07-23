@@ -14,7 +14,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 import jwt
@@ -81,7 +81,7 @@ def load_private_key():
 
 def generate_jwt_token(username: str, scopes: List[str], private_key, expires_in_hours: int = 1):
     """Generate a JWT token."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     now_timestamp = int(now.timestamp())
     exp_timestamp = int((now + timedelta(hours=expires_in_hours)).timestamp())
     
