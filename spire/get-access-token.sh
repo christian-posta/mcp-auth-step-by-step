@@ -41,13 +41,54 @@ else
 fi
 prompt_continue
 
-# 2. Fetch JWT SVID using spire-agent CLI
+# 2. Fetch JWT SVID using spire-agent CLI with retry logic
 echo
 echo "Step 2: Fetching JWT SVID from SPIRE..."
-JWT_OUTPUT=$(docker compose exec spire-agent /opt/spire/bin/spire-agent api fetch jwt \
-  --audience "$AUDIENCE" \
-  --spiffeID "$WORKLOAD_SPIFFE_ID" \
-  --socketPath /opt/spire/sockets/workload_api.sock)
+
+# Retry configuration
+MAX_ATTEMPTS=10
+ATTEMPT=1
+BACKOFF_DELAY=2
+
+JWT_OUTPUT=""
+while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+  echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Fetching JWT SVID..."
+  
+  JWT_OUTPUT=$(docker compose exec spire-agent /opt/spire/bin/spire-agent api fetch jwt \
+    --audience "$AUDIENCE" \
+    --spiffeID "$WORKLOAD_SPIFFE_ID" \
+    --socketPath /opt/spire/sockets/workload_api.sock 2>&1)
+  
+  # Check if the command was successful and JWT was returned
+  if [ $? -eq 0 ] && echo "$JWT_OUTPUT" | grep -q "token("; then
+    echo "✅ Successfully fetched JWT SVID on attempt $ATTEMPT"
+    break
+  else
+    echo "⚠️  Attempt $ATTEMPT failed. JWT SVID not yet available."
+    echo "Output: $JWT_OUTPUT"
+    
+    if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+      echo "❌ Failed to fetch JWT SVID after $MAX_ATTEMPTS attempts"
+      echo "This may indicate:"
+      echo "  1. The workload entry hasn't synced to the agent yet"
+      echo "  2. The SPIRE agent is not running or accessible"
+      echo "  3. The workload selector doesn't match (unix:uid:0)"
+      echo "  4. Network connectivity issues"
+      exit 1
+    fi
+    
+    echo "⏳ Waiting ${BACKOFF_DELAY} seconds before next attempt..."
+    sleep $BACKOFF_DELAY
+    
+    # Exponential backoff (double the delay, max 30 seconds)
+    BACKOFF_DELAY=$((BACKOFF_DELAY * 2))
+    if [ $BACKOFF_DELAY -gt 30 ]; then
+      BACKOFF_DELAY=30
+    fi
+    
+    ATTEMPT=$((ATTEMPT + 1))
+  fi
+done
 
 echo "SPIRE JWT Output:"
 echo "$JWT_OUTPUT"

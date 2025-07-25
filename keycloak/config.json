@@ -61,7 +61,8 @@
         "jwks.url": "http://spire-oidc-discovery:8443/keys",
         "client.secret.creation.time": "1640995200",
         "backchannel.logout.session.required": "false",
-        "standard.token.exchange.enabled": "true"
+        "standard.token.exchange.enabled": "true",
+        "issuer": "http://spire-server:8443"
       }
     },     
     {
