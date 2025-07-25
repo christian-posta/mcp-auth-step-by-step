@@ -10,6 +10,7 @@ services:
       - "8080:8080"
     volumes:
       - ./spiffe-svid-client-authenticator-1.0.0.jar:/opt/keycloak/providers/spiffe-svid-client-authenticator-1.0.0.jar:ro
+      - ./spiffe-dcr-spi-1.0.0.jar:/opt/keycloak/providers/spiffe-dcr-spi-1.0.0.jar:ro
     command: start-dev
     networks:
       - keycloak-shared-network

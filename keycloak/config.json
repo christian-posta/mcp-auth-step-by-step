@@ -7,7 +7,11 @@
     "accessTokenLifespanForImplicitFlow": 1800,
     "ssoSessionIdleTimeout": 3600,
     "ssoSessionMaxLifespan": 72000,
-    "offlineSessionIdleTimeout": 2592000
+    "offlineSessionIdleTimeout": 2592000,
+    "attributes": {
+      "spiffe.trust.domain": "example.org",
+      "spiffe.jwks.url": "http://spire-oidc-discovery:8443/keys"
+    }
   },
   "authenticationFlows": [
     {

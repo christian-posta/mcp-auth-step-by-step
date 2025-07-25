@@ -153,8 +153,8 @@ class KeycloakSetup:
             # Check if realm exists
             response = self.session.get(f"{self.admin_base_url}/realms/{realm_name}")
             if response.status_code == 200:
-                self.log('WARNING', f'Realm {realm_name} already exists, skipping creation')
-                return True
+                self.log('WARNING', f'Realm {realm_name} already exists, updating attributes...')
+                return self.update_realm_attributes(realm_name, realm_config)
                 
             # Create realm - use proper Keycloak realm structure
             realm_data = {
@@ -175,6 +175,12 @@ class KeycloakSetup:
             if 'offlineSessionIdleTimeout' in realm_config:
                 realm_data["offlineSessionIdleTimeout"] = realm_config['offlineSessionIdleTimeout']
             
+            # Add realm attributes if specified
+            if 'attributes' in realm_config:
+                realm_data["attributes"] = {}
+                for key, value in realm_config['attributes'].items():
+                    realm_data["attributes"][key] = str(value)  # Keycloak expects string values
+            
             if self.debug:
                 self.log('DEBUG', f'Realm data: {json.dumps(realm_data, indent=2)}')
             
@@ -189,10 +195,74 @@ class KeycloakSetup:
                 return False
             
             self.log('SUCCESS', f'Realm {realm_name} created')
+            
+            # Log SPIFFE attributes if they were set
+            if 'attributes' in realm_config:
+                self.log('INFO', 'Realm attributes configured:')
+                for key, value in realm_config['attributes'].items():
+                    self.log('INFO', f'  {key}: {value}')
+            
             return True
             
         except requests.exceptions.RequestException as e:
             self.log('ERROR', f'Failed to create realm {realm_name}: {e}')
+            if hasattr(e, 'response') and e.response is not None:
+                try:
+                    error_detail = e.response.json()
+                    self.log('ERROR', f'Error details: {error_detail}')
+                except:
+                    self.log('ERROR', f'Error response: {e.response.text}')
+            return False
+            
+    def update_realm_attributes(self, realm_name: str, realm_config: Dict[str, Any]) -> bool:
+        """Update realm attributes for an existing realm."""
+        if 'attributes' not in realm_config:
+            self.log('INFO', 'No attributes to update')
+            return True
+            
+        self.log('INFO', f'Updating attributes for realm: {realm_name}...')
+        
+        try:
+            # Get current realm configuration
+            response = self.session.get(f"{self.admin_base_url}/realms/{realm_name}")
+            response.raise_for_status()
+            current_realm = response.json()
+            
+            # Get current attributes or initialize empty dict
+            current_attributes = current_realm.get('attributes', {})
+            
+            # Add/update new attributes
+            for key, value in realm_config['attributes'].items():
+                current_attributes[key] = str(value)  # Keycloak expects string values
+                
+            # Update the current realm configuration with new attributes
+            current_realm["attributes"] = current_attributes
+            
+            if self.debug:
+                self.log('DEBUG', f'Updating realm with attributes: {json.dumps({"attributes": current_attributes}, indent=2)}')
+            
+            # Update the realm with complete configuration
+            response = self.session.put(
+                f"{self.admin_base_url}/realms/{realm_name}",
+                json=current_realm
+            )
+            
+            if response.status_code not in (200, 204):
+                self.log('ERROR', f'Failed to update realm attributes. Status: {response.status_code}')
+                self.log('ERROR', f'Response: {response.text}')
+                return False
+            
+            self.log('SUCCESS', f'Realm {realm_name} attributes updated')
+            
+            # Log updated attributes
+            self.log('INFO', 'Updated realm attributes:')
+            for key, value in realm_config['attributes'].items():
+                self.log('INFO', f'  {key}: {value}')
+            
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            self.log('ERROR', f'Failed to update realm attributes for {realm_name}: {e}')
             if hasattr(e, 'response') and e.response is not None:
                 try:
                     error_detail = e.response.json()
@@ -1008,6 +1078,12 @@ class KeycloakSetup:
         print(f"\n{Colors.CYAN}=== KEYCLOAK SETUP SUMMARY ==={Colors.NC}")
         print(f"Keycloak URL: {self.keycloak_url}")
         print(f"Realm: {realm_name}")
+        
+        # Print realm attributes if they exist
+        if 'attributes' in config['realm']:
+            print(f"\n{Colors.WHITE}Realm Attributes:{Colors.NC}")
+            for key, value in config['realm']['attributes'].items():
+                print(f"  • {key}: {value}")
         
         print(f"\n{Colors.WHITE}Clients:{Colors.NC}")
         for client in config.get('clients', []):

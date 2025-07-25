@@ -9,6 +9,7 @@ services:
       - ./dummy_upstream_ca.crt:/etc/spire/server/dummy_upstream_ca.crt:ro
       - ./dummy_upstream_ca.key:/etc/spire/server/dummy_upstream_ca.key:ro
       - spire-server-socket:/tmp/spire-server/private
+      - ./spire-software-statements-linux:/opt/spire/plugins/spire-software-statements:ro
     command: ["-config", "/etc/spire/server/server.conf"]
     networks:
       - keycloak_keycloak-shared-network
