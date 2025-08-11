@@ -64,7 +64,22 @@
         "standard.token.exchange.enabled": "true",
         "issuer": "http://spire-server:8443"
       }
-    },     
+    },   
+    {
+      "clientId": "gloo-sts",
+      "name": "Gloo STS",
+      "type": "confidential", 
+      "enabled": true,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "tokenExchange": {
+        "enabled": true
+      },
+      "clientSecret": "PLOs4j6ti521kb5ZVVVwi5GWi9eDYTwq",
+      "webOrigins": ["http://localhost:3001"],
+      "redirectUris": ["http://localhost:3001/auth/callback"]
+    },      
     {
       "clientId": "echo-mcp-server",
       "name": "Echo MCP Server",

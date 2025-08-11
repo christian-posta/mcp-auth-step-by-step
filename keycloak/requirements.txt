@@ -1,0 +1,15 @@
+# Requirements for boot_keycloak.py
+# This script combines Docker management and Keycloak configuration
+
+# HTTP client library for making requests to Keycloak API
+requests>=2.25.0
+
+# Note: The following are standard library modules and don't need to be installed:
+# - subprocess
+# - sys
+# - time
+# - json
+# - os
+# - argparse
+# - pathlib
+# - typing
