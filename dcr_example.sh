@@ -23,7 +23,11 @@ RESPONSE=$(curl -s -X POST "$REG_ENDPOINT" \
   -d "$PAYLOAD")
 
 echo "Response:"
-echo "$RESPONSE" | jq
+if command -v jq >/dev/null 2>&1; then
+  echo "$RESPONSE" | jq -C .
+else
+  echo "$RESPONSE"
+fi
 
 # Extract client_id and client_secret
 CLIENT_ID=$(echo "$RESPONSE" | jq -r '.client_id')

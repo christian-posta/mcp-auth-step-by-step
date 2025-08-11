@@ -4,6 +4,15 @@
 echo "🧪 Testing Step 4: MCP Tools Dispatching"
 echo "========================================="
 
+# Pretty-print JSON with jq (color if available), fallback to raw
+pretty_json() {
+  if command -v jq >/dev/null 2>&1; then
+    jq -C . 2>/dev/null || cat
+  else
+    cat
+  fi
+}
+
 # Function to cleanup background processes
 cleanup() {
     echo "🧹 Cleaning up..."
@@ -32,7 +41,8 @@ HEALTH_RESPONSE=$(curl -s http://localhost:9000/health)
 
 if [ $? -eq 0 ]; then
     echo "✅ Health endpoint test passed!"
-    echo "📄 Response: $HEALTH_RESPONSE"
+    echo "📄 Response:"
+    echo "$HEALTH_RESPONSE" | pretty_json
 else
     echo "❌ Health endpoint test failed!"
     exit 1
@@ -46,7 +56,8 @@ INIT_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ MCP initialize test passed!"
-    echo "📄 Response: $INIT_RESPONSE"
+    echo "📄 Response:"
+    echo "$INIT_RESPONSE" | pretty_json
     
     # Check if response contains expected fields
     if echo "$INIT_RESPONSE" | grep -q '"protocolVersion"' && echo "$INIT_RESPONSE" | grep -q '"serverInfo"'; then
@@ -68,7 +79,8 @@ TOOLS_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ list_tools test passed!"
-    echo "📄 Response: $TOOLS_RESPONSE"
+    echo "📄 Response:"
+    echo "$TOOLS_RESPONSE" | pretty_json
     
     # Check if response contains tools
     if echo "$TOOLS_RESPONSE" | grep -q '"name":"echo"'; then
@@ -90,7 +102,8 @@ CALL_TOOL_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ call_tool test passed!"
-    echo "📄 Response: $CALL_TOOL_RESPONSE"
+    echo "📄 Response:"
+    echo "$CALL_TOOL_RESPONSE" | pretty_json
     
     # Check if response contains the echoed message
     if echo "$CALL_TOOL_RESPONSE" | grep -q 'Hello WorldHello WorldHello World'; then
@@ -112,7 +125,8 @@ CALL_TOOL_RESPONSE2=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ call_tool with different params test passed!"
-    echo "📄 Response: $CALL_TOOL_RESPONSE2"
+    echo "📄 Response:"
+    echo "$CALL_TOOL_RESPONSE2" | pretty_json
     
     # Check if response contains the echoed message
     if echo "$CALL_TOOL_RESPONSE2" | grep -q 'TestTest'; then
@@ -134,7 +148,8 @@ ERROR_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ Unsupported method test passed!"
-    echo "📄 Response: $ERROR_RESPONSE"
+    echo "📄 Response:"
+    echo "$ERROR_RESPONSE" | pretty_json
     
     # Check if response contains error
     if echo "$ERROR_RESPONSE" | grep -q '"error"' && echo "$ERROR_RESPONSE" | grep -q '"code":-32603'; then
