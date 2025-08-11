@@ -4,6 +4,15 @@
 echo "🧪 Testing Step 2: MCP Request Handling with Origin Validation"
 echo "==============================================================="
 
+# Pretty-print JSON with jq (color if available), fallback to raw
+pretty_json() {
+  if command -v jq >/dev/null 2>&1; then
+    jq -C . 2>/dev/null || cat
+  else
+    cat
+  fi
+}
+
 # Function to cleanup background processes
 cleanup() {
     echo "🧹 Cleaning up..."
@@ -32,7 +41,8 @@ HEALTH_RESPONSE=$(curl -s http://localhost:9000/health)
 
 if [ $? -eq 0 ]; then
     echo "✅ Health endpoint test passed!"
-    echo "📄 Response: $HEALTH_RESPONSE"
+    echo "📄 Response:"
+    echo "$HEALTH_RESPONSE" | pretty_json
 else
     echo "❌ Health endpoint test failed!"
     exit 1
@@ -47,7 +57,8 @@ PING_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ MCP ping test with localhost Origin passed!"
-    echo "📄 Response: $PING_RESPONSE"
+    echo "📄 Response:"
+    echo "$PING_RESPONSE" | pretty_json
     
     # Check if response contains expected fields
     if echo "$PING_RESPONSE" | grep -q '"jsonrpc":"2.0"' && echo "$PING_RESPONSE" | grep -q '"id":1'; then
@@ -70,7 +81,8 @@ PING_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ MCP ping test with 127.0.0.1 Origin passed!"
-    echo "📄 Response: $PING_RESPONSE"
+    echo "📄 Response:"
+    echo "$PING_RESPONSE" | pretty_json
 else
     echo "❌ MCP ping test with 127.0.0.1 Origin failed!"
     exit 1
@@ -87,10 +99,12 @@ RESPONSE_BODY="${NO_ORIGIN_RESPONSE%???}"
 
 if [ "$HTTP_CODE" = "403" ]; then
     echo "✅ MCP ping test with no Origin header correctly rejected!"
-    echo "📄 Response: $RESPONSE_BODY"
+    echo "📄 Response:"
+    echo "$RESPONSE_BODY" | pretty_json
 else
     echo "❌ MCP ping test with no Origin header should have been rejected!"
-    echo "📄 Response: $RESPONSE_BODY"
+    echo "📄 Response:"
+    echo "$RESPONSE_BODY" | pretty_json
     echo "📄 HTTP Code: $HTTP_CODE"
     exit 1
 fi
@@ -107,10 +121,12 @@ INVALID_RESPONSE_BODY="${INVALID_ORIGIN_RESPONSE%???}"
 
 if [ "$INVALID_HTTP_CODE" = "403" ]; then
     echo "✅ MCP ping test with invalid Origin correctly rejected!"
-    echo "📄 Response: $INVALID_RESPONSE_BODY"
+    echo "📄 Response:"
+    echo "$INVALID_RESPONSE_BODY" | pretty_json
 else
     echo "❌ MCP ping test with invalid Origin should have been rejected!"
-    echo "📄 Response: $INVALID_RESPONSE_BODY"
+    echo "📄 Response:"
+    echo "$INVALID_RESPONSE_BODY" | pretty_json
     echo "📄 HTTP Code: $INVALID_HTTP_CODE"
     exit 1
 fi
@@ -127,10 +143,12 @@ HTTPS_RESPONSE_BODY="${HTTPS_ORIGIN_RESPONSE%???}"
 
 if [ "$HTTPS_HTTP_CODE" = "403" ]; then
     echo "✅ MCP ping test with HTTPS localhost correctly rejected!"
-    echo "📄 Response: $HTTPS_RESPONSE_BODY"
+    echo "📄 Response:"
+    echo "$HTTPS_RESPONSE_BODY" | pretty_json
 else
     echo "❌ MCP ping test with HTTPS localhost should have been rejected!"
-    echo "📄 Response: $HTTPS_RESPONSE_BODY"
+    echo "📄 Response:"
+    echo "$HTTPS_RESPONSE_BODY" | pretty_json
     echo "📄 HTTP Code: $HTTPS_HTTP_CODE"
     exit 1
 fi
@@ -144,7 +162,8 @@ ERROR_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ MCP method not found test with valid Origin passed!"
-    echo "📄 Response: $ERROR_RESPONSE"
+    echo "📄 Response:"
+    echo "$ERROR_RESPONSE" | pretty_json
     
     # Check if response contains error
     if echo "$ERROR_RESPONSE" | grep -q '"error"' && echo "$ERROR_RESPONSE" | grep -q '"code":-32601'; then

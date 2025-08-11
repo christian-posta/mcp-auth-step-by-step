@@ -98,11 +98,11 @@ decode_jwt() {
     print_info "Payload base64 (padded): $payload_b64_padded" >&2
     
     # Decode header
-    local header=$(echo "$header_b64_padded" | base64 -d 2>/dev/null | jq '.' 2>/dev/null)
+    local header=$(echo "$header_b64_padded" | base64 -d 2>/dev/null | jq -C '.' 2>/dev/null)
     print_info "Header: $header" >&2
     
     # Decode payload
-    local payload=$(echo "$payload_b64_padded" | base64 -d 2>/dev/null | jq '.' 2>/dev/null)
+    local payload=$(echo "$payload_b64_padded" | base64 -d 2>/dev/null | jq -C '.' 2>/dev/null)
     print_info "Payload: $payload" >&2
     
     # Check key fields
@@ -167,7 +167,7 @@ get_token() {
     
     # Debug: Check the token response
     print_info "Token response from Keycloak:" >&2
-    echo "$token_response" | jq '.' >&2 2>/dev/null || echo "Raw response: $token_response" >&2
+    echo "$token_response" | jq -C '.' >&2 2>/dev/null || echo "Raw response: $token_response" >&2
     
     if echo "$token_response" | grep -q "access_token"; then
         # Extract just the access_token, ensuring it's clean
@@ -203,7 +203,7 @@ get_token() {
         echo -n "$access_token"
     else
         print_error "Failed to get token:" >&2
-        echo "$token_response" | jq '.' >&2 2>/dev/null || echo "Raw response: $token_response" >&2
+        echo "$token_response" | jq -C '.' >&2 2>/dev/null || echo "Raw response: $token_response" >&2
         return 1
     fi
 }
@@ -216,10 +216,10 @@ test_realm_config() {
     
     if echo "$realm_info" | grep -q "mcp-realm"; then
         print_status "Realm configuration verified"
-        echo "$realm_info" | jq '.'
+        echo "$realm_info" | jq -C '.'
     else
         print_error "Realm configuration verification failed"
-        echo "$realm_info" | jq '.'
+        echo "$realm_info" | jq -C '.'
         exit 1
     fi
 }
@@ -232,10 +232,10 @@ test_oauth_metadata() {
     
     if echo "$auth_server_metadata" | grep -q "issuer"; then
         print_status "OAuth authorization server metadata verified"
-        echo "$auth_server_metadata" | jq '.'
+        echo "$auth_server_metadata" | jq -C '.'
     else
         print_error "OAuth authorization server metadata verification failed"
-        echo "$auth_server_metadata" | jq '.'
+        echo "$auth_server_metadata" | jq -C '.'
         exit 1
     fi
 }
@@ -248,10 +248,10 @@ test_jwks() {
     
     if echo "$jwks" | grep -q "keys"; then
         print_status "JWKS endpoint verified"
-        echo "$jwks" | jq '.'
+        echo "$jwks" | jq -C '.'
     else
         print_error "JWKS endpoint verification failed"
-        echo "$jwks" | jq '.'
+        echo "$jwks" | jq -C '.'
         exit 1
     fi
 }

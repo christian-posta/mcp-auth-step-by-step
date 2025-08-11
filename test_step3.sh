@@ -4,6 +4,15 @@
 echo "🧪 Testing Step 3: MCP Tools and Prompts"
 echo "========================================="
 
+# Pretty-print JSON with jq (color if available), fallback to raw
+pretty_json() {
+  if command -v jq >/dev/null 2>&1; then
+    jq -C . 2>/dev/null || cat
+  else
+    cat
+  fi
+}
+
 # Function to cleanup background processes
 cleanup() {
     echo "🧹 Cleaning up..."
@@ -32,7 +41,8 @@ HEALTH_RESPONSE=$(curl -s http://localhost:9000/health)
 
 if [ $? -eq 0 ]; then
     echo "✅ Health endpoint test passed!"
-    echo "📄 Response: $HEALTH_RESPONSE"
+    echo "📄 Response:"
+    echo "$HEALTH_RESPONSE" | pretty_json
 else
     echo "❌ Health endpoint test failed!"
     exit 1
@@ -46,7 +56,8 @@ PING_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ MCP ping test passed!"
-    echo "📄 Response: $PING_RESPONSE"
+    echo "📄 Response:"
+    echo "$PING_RESPONSE" | pretty_json
 else
     echo "❌ MCP ping test failed!"
     exit 1
@@ -60,7 +71,8 @@ TOOLS_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ list_tools test passed!"
-    echo "📄 Response: $TOOLS_RESPONSE"
+    echo "📄 Response:"
+    echo "$TOOLS_RESPONSE" | pretty_json
     
     # Check if response contains error (expected since dispatching not implemented)
     if echo "$TOOLS_RESPONSE" | grep -q '"error"' && echo "$TOOLS_RESPONSE" | grep -q '"code":-32601'; then
@@ -82,7 +94,8 @@ CALL_TOOL_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ call_tool test passed!"
-    echo "📄 Response: $CALL_TOOL_RESPONSE"
+    echo "📄 Response:"
+    echo "$CALL_TOOL_RESPONSE" | pretty_json
     
     # Check if response contains error (expected since dispatching not implemented)
     if echo "$CALL_TOOL_RESPONSE" | grep -q '"error"' && echo "$CALL_TOOL_RESPONSE" | grep -q '"code":-32601'; then
@@ -104,7 +117,8 @@ PROMPTS_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ list_prompts test passed!"
-    echo "📄 Response: $PROMPTS_RESPONSE"
+    echo "📄 Response:"
+    echo "$PROMPTS_RESPONSE" | pretty_json
     
     # Check if response contains error (expected since dispatching not implemented)
     if echo "$PROMPTS_RESPONSE" | grep -q '"error"' && echo "$PROMPTS_RESPONSE" | grep -q '"code":-32601'; then
@@ -126,7 +140,8 @@ GET_PROMPT_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ get_prompt test passed!"
-    echo "📄 Response: $GET_PROMPT_RESPONSE"
+    echo "📄 Response:"
+    echo "$GET_PROMPT_RESPONSE" | pretty_json
     
     # Check if response contains error (expected since dispatching not implemented)
     if echo "$GET_PROMPT_RESPONSE" | grep -q '"error"' && echo "$GET_PROMPT_RESPONSE" | grep -q '"code":-32601'; then

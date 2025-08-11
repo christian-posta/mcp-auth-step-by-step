@@ -4,6 +4,15 @@
 echo "🧪 Testing Step 7: OAuth 2.0 Metadata"
 echo "====================================="
 
+# Pretty-print JSON with jq (color if available), fallback to raw
+pretty_json() {
+  if command -v jq >/dev/null 2>&1; then
+    jq -C . 2>/dev/null || cat
+  else
+    cat
+  fi
+}
+
 # Function to cleanup background processes
 cleanup() {
     echo "🧹 Cleaning up..."
@@ -56,7 +65,8 @@ HEALTH_RESPONSE=$(curl -s http://localhost:9000/health)
 
 if [ $? -eq 0 ]; then
     echo "✅ Health endpoint test passed!"
-    echo "📄 Response: $HEALTH_RESPONSE"
+    echo "📄 Response:"
+    echo "$HEALTH_RESPONSE" | pretty_json
     
     # Check if OAuth metadata is included
     if echo "$HEALTH_RESPONSE" | grep -q '"oauth_metadata"'; then
@@ -76,7 +86,8 @@ PROTECTED_RESOURCE_RESPONSE=$(curl -s http://localhost:9000/.well-known/oauth-pr
 
 if [ $? -eq 0 ]; then
     echo "✅ OAuth Protected Resource metadata test passed!"
-    echo "📄 Response: $PROTECTED_RESOURCE_RESPONSE"
+    echo "📄 Response:"
+    echo "$PROTECTED_RESOURCE_RESPONSE" | pretty_json
     
     # Check if response contains required fields
     if echo "$PROTECTED_RESOURCE_RESPONSE" | grep -q '"resource"' && \
@@ -108,7 +119,8 @@ AUTH_SERVER_RESPONSE=$(curl -s http://localhost:9000/.well-known/oauth-authoriza
 
 if [ $? -eq 0 ]; then
     echo "✅ OAuth Authorization Server metadata test passed!"
-    echo "📄 Response: $AUTH_SERVER_RESPONSE"
+    echo "📄 Response:"
+    echo "$AUTH_SERVER_RESPONSE" | pretty_json
     
     # Check if response contains required fields
     if echo "$AUTH_SERVER_RESPONSE" | grep -q '"issuer"' && \
@@ -139,7 +151,8 @@ JWKS_RESPONSE=$(curl -s http://localhost:9000/.well-known/jwks.json)
 
 if [ $? -eq 0 ]; then
     echo "✅ JWKS endpoint test passed!"
-    echo "📄 Response: $JWKS_RESPONSE"
+    echo "📄 Response:"
+    echo "$JWKS_RESPONSE" | pretty_json
     
     # Check if JWKS contains keys
     if echo "$JWKS_RESPONSE" | grep -q '"keys"'; then
@@ -162,7 +175,8 @@ AUTH_INIT_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ Authenticated initialize test passed!"
-    echo "📄 Response: $AUTH_INIT_RESPONSE"
+    echo "📄 Response:"
+    echo "$AUTH_INIT_RESPONSE" | pretty_json
     
     # Check if response contains OAuth metadata
     if echo "$AUTH_INIT_RESPONSE" | grep -q '"oauth_metadata"' && \
@@ -187,7 +201,8 @@ AUTH_PING_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ Authenticated ping test passed!"
-    echo "📄 Response: $AUTH_PING_RESPONSE"
+    echo "📄 Response:"
+    echo "$AUTH_PING_RESPONSE" | pretty_json
     
     # Check if response contains OAuth metadata flag
     if echo "$AUTH_PING_RESPONSE" | grep -q '"oauth_metadata_available":true'; then
@@ -210,7 +225,8 @@ AUTH_TOOLS_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ Authenticated tools/list test passed!"
-    echo "📄 Response: $AUTH_TOOLS_RESPONSE"
+    echo "📄 Response:"
+    echo "$AUTH_TOOLS_RESPONSE" | pretty_json
     
     # Check if response contains tools
     if echo "$AUTH_TOOLS_RESPONSE" | grep -q '"name":"echo"'; then
@@ -233,7 +249,8 @@ AUTH_CALL_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ Authenticated tools/call test passed!"
-    echo "📄 Response: $AUTH_CALL_RESPONSE"
+    echo "📄 Response:"
+    echo "$AUTH_CALL_RESPONSE" | pretty_json
     
     # Check if response contains the echoed message
     if echo "$AUTH_CALL_RESPONSE" | grep -q 'Hello OAuthHello OAuth'; then
@@ -255,7 +272,8 @@ UNAUTH_RESPONSE=$(curl -s -X POST http://localhost:9000/mcp \
 
 if [ $? -eq 0 ]; then
     echo "✅ Unauthenticated request test passed!"
-    echo "📄 Response: $UNAUTH_RESPONSE"
+    echo "📄 Response:"
+    echo "$UNAUTH_RESPONSE" | pretty_json
     
     # Check if response contains 401 error
     if echo "$UNAUTH_RESPONSE" | grep -q '"detail":"Authorization header missing"'; then

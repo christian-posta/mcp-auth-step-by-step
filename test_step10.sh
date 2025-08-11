@@ -316,10 +316,10 @@ test_mcp_health() {
     
     if echo "$health_response" | grep -q "keycloak_integration.*true"; then
         print_status "MCP server health check passed"
-        echo "$health_response" | jq '.'
+        echo "$health_response" | jq -C '.'
     else
         print_error "MCP server health check failed:"
-        echo "$health_response" | jq '.'
+        echo "$health_response" | jq -C '.'
         exit 1
     fi
 }
@@ -340,7 +340,7 @@ test_unauthorized() {
         print_status "Unauthorized request correctly rejected"
     else
         print_error "Expected 401, got $http_code"
-        echo "$body" | jq '.'
+        echo "$body" | jq -C '.'
         exit 1
     fi
 }
@@ -394,7 +394,7 @@ test_authorized() {
     
     if echo "$response" | grep -q "result"; then
         print_status "Authorized request successful for $method"
-        echo "$response" | jq '.result'
+        echo "$response" | jq -C '.result'
         
         # Check if scopes are included in response
         if echo "$response" | grep -q "userScopes"; then
@@ -403,7 +403,7 @@ test_authorized() {
         fi
     else
         print_error "Authorized request failed for $method:"
-        echo "$response" | jq '.' 2>/dev/null || echo "Raw response: $response"
+        echo "$response" | jq -C '.' 2>/dev/null || echo "Raw response: $response"
         exit 1
     fi
 }
@@ -445,7 +445,7 @@ test_scope_authorization() {
             print_status "Scope authorization test passed for $method"
         else
             print_error "Scope authorization test failed for $method (expected success):"
-            echo "$response" | jq '.' 2>/dev/null || echo "Raw response: $response"
+            echo "$response" | jq -C '.' 2>/dev/null || echo "Raw response: $response"
             exit 1
         fi
     else
@@ -453,7 +453,7 @@ test_scope_authorization() {
             print_status "Scope authorization test passed for $method (correctly denied)"
         else
             print_error "Scope authorization test failed for $method (expected failure):"
-            echo "$response" | jq '.' 2>/dev/null || echo "Raw response: $response"
+            echo "$response" | jq -C '.' 2>/dev/null || echo "Raw response: $response"
             exit 1
         fi
     fi
@@ -619,10 +619,10 @@ main() {
         local oauth_metadata=$(curl -s "$oauth_metadata_url")
         if echo "$oauth_metadata" | grep -q '"issuer"'; then
             print_status "Keycloak OAuth 2.0 Authorization Server metadata endpoint working"
-            echo "$oauth_metadata" | jq '.'
+            echo "$oauth_metadata" | jq -C '.'
         else
             print_error "Keycloak OAuth 2.0 Authorization Server metadata endpoint failed"
-            echo "$oauth_metadata" | jq '.'
+            echo "$oauth_metadata" | jq -C '.'
         fi
     else
         print_error "No authorization server URL found in protected resource metadata"
