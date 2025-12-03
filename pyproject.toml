@@ -10,6 +10,9 @@ dependencies = [
     "PyJWT>=2.8.0",
     "cryptography>=41.0.0",
     "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.27.0",
+    "fastmcp>=2.0.0",
 ]
 
 [project.scripts]
@@ -24,6 +27,9 @@ step8 = "mcp_http.step8:main"
 step9 = "mcp_http.step9:main"
 step10 = "mcp_http.step10:main"
 step11 = "mcp_http.step11:main"
+step12 = "mcp_http.step12:main"
+step13 = "mcp_http.step13:main"
+step14 = "mcp_http.step14:main"
 
 [build-system]
 requires = ["hatchling"]

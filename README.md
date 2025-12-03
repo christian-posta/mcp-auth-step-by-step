@@ -2,6 +2,35 @@
 
 This repository demonstrates building an MCP (Model Context Protocol) server with HTTP transport and JWT authentication, progressing through iterative steps.
 
+> **For AI coding assistants:** See [AGENTS.md](AGENTS.md) for project guidance.
+
+## Quick Start
+
+```bash
+# Prerequisites: Python 3.10+, uv, Docker, jq
+
+# 1. Start Keycloak
+cd keycloak && docker compose up -d && cd ..
+
+# 2. Setup Keycloak realm
+uv run python keycloak/setup_keycloak.py --config keycloak/config.json --url http://localhost:8080
+
+# 3. Run MCP server (choose a step)
+uv run step12  # Per-tool RBAC with FastAPI
+# or
+uv run step13  # FastMCP with basic OAuth
+# or
+uv run step14  # FastMCP with per-tool RBAC
+
+# 4. Test
+./test_step12.sh
+# or
+uv run python test_step13.py
+uv run python test_step14.py
+```
+
+## Blog Series
+
 This repo is a companion to the in-depth, step-by-step blog posts on "MCP Authorization". See the following:
 
 * [Understanding MCP Authorization, Step by Step, Part One](https://blog.christianposta.com/understanding-mcp-authorization-step-by-step/)
@@ -115,13 +144,76 @@ The project shows how to build a secure MCP server with:
   - 403 Forbidden responses for insufficient permissions
   - Scope enforcement for MCP operations
 
-### Step 9: Enhanced MCP Integration (Planned)
-- **What it will add**: User context in responses and authenticated tools
-- **Planned features**:
-  - User context in MCP response headers/metadata
-  - Authenticated tools with user-aware behavior
-  - Enhanced MCP protocol integration
-  - Personalized responses based on user identity
+### Step 9: Keycloak Integration
+- **File**: `src/mcp_http/step9.py`
+- **What it adds**: Keycloak as external identity provider
+- **Key features**:
+  - Integration with Keycloak for JWT validation
+  - JWKS fetching from Keycloak
+  - OAuth 2.0 metadata discovery
+
+### Step 10: Full Keycloak Integration
+- **File**: `src/mcp_http/step10.py`
+- **What it adds**: Complete Keycloak integration with environment configuration
+- **Key features**:
+  - Environment-based configuration
+  - Full OAuth 2.0 flow support
+  - Scope-based authorization with Keycloak roles
+
+### Step 11: Dynamic Client Registration
+- **File**: `src/mcp_http/step11.py`
+- **What it adds**: OAuth 2.0 Dynamic Client Registration (DCR)
+- **Key features**:
+  - RFC 7591 compliant DCR
+  - Automatic client registration
+
+### Step 12: Per-Tool RBAC (FastAPI)
+- **File**: `src/mcp_http/step12.py`
+- **What it adds**: Fine-grained, per-tool authorization using manual FastAPI implementation
+- **Key features**:
+  - 4 tools with individual scope requirements: `echo`, `get_time`, `calculate`, `system_info`
+  - Hierarchical scope system: `mcp:tools` grants access to ALL tools
+  - Tool-specific scopes: `mcp:tools:echo`, `mcp:tools:time`, `mcp:tools:calc`, `mcp:tools:admin`
+  - Filtered `tools/list` response based on user permissions
+  - Educational implementation showing "how it works under the hood"
+
+### Step 13: FastMCP with Basic OAuth
+- **File**: `src/mcp_http/step13.py`
+- **What it adds**: Modern FastMCP framework with OAuth authentication
+- **Key features**:
+  - Built-in `JWTVerifier` for token validation
+  - `RemoteAuthProvider` for OAuth integration
+  - `get_access_token()` for accessing token claims
+  - All tools available to any authenticated user (no per-tool RBAC)
+  - ~200 lines of code
+
+### Step 14: FastMCP with Per-Tool RBAC
+- **File**: `src/mcp_http/step14.py`
+- **What it adds**: Per-tool RBAC with filtered tools/list
+- **Key features**:
+  - `RBACFastMCP` subclass with custom `_filtered_list_tools`
+  - Users only see tools they have permission to use
+  - Hierarchical scope support: `mcp:tools` grants access to ALL tools
+  - Per-tool scopes: `mcp:tools:echo`, `mcp:tools:time`, `mcp:tools:calc`, `mcp:tools:admin`
+
+#### Step 12 vs Step 13 vs Step 14 Comparison
+
+| Feature | Step 12 (FastAPI) | Step 13 (FastMCP Basic) | Step 14 (FastMCP RBAC) |
+|---------|-------------------|-------------------------|------------------------|
+| JWT Validation | Manual JWKS fetch | JWTVerifier built-in | JWTVerifier built-in |
+| OAuth Integration | Custom endpoints | RemoteAuthProvider | RemoteAuthProvider |
+| Tool Access | Per-tool scopes | All authenticated | Per-tool scopes |
+| tools/list | Filtered | All tools | Filtered |
+| Code Lines | ~400 lines | ~200 lines | ~350 lines |
+
+#### Per-Tool Scope Matrix (Step 12/14)
+
+| User | echo | get_time | calculate | system_info |
+|------|------|----------|-----------|-------------|
+| mcp-admin (mcp:tools) | ✓ | ✓ | ✓ | ✓ |
+| mcp-user | ✓ | ✓ | ✓ | ✗ |
+| mcp-guest | ✓ | ✗ | ✗ | ✗ |
+| mcp-readonly | ✗ | ✗ | ✗ | ✗ |
 
 ## JWT Token Structure
 
@@ -143,8 +235,11 @@ Each step includes a corresponding test script (`test_stepX.sh`) that validates:
 ## Usage
 
 ### Prerequisites
-1. Install `uv`: https://docs.astral.sh/uv/getting-started/installation/
-2. Navigate to the `http-transport-steps` directory
+
+1. **Python 3.10+**
+2. **uv** package manager: https://docs.astral.sh/uv/getting-started/installation/
+3. **Docker** (for running Keycloak)
+4. **jq** (for test scripts)
 
 ### Running Steps with uv
 
@@ -224,11 +319,44 @@ curl -X POST "http://localhost:8080/realms/mcp-realm/protocol/openid-connect/tok
 
 The script will output a JWT token that can be used in the `Authorization: Bearer <token>` header for authenticated requests.
 
+### Running Step 12/13/14 (Per-Tool RBAC)
+
+Steps 12 and 14 demonstrate per-tool authorization. Step 13 is basic FastMCP OAuth.
+
+```bash
+# Start Keycloak first
+cd keycloak && docker compose up -d && cd ..
+
+# Setup Keycloak realm with new scopes and users
+cd keycloak && uv run python setup_keycloak.py --config config.json --url http://localhost:8080 && cd ..
+
+# Run Step 12 (FastAPI with RBAC)
+uv run step12
+
+# Or run Step 13 (FastMCP basic OAuth - all tools for authenticated users)
+uv run step13
+
+# Or run Step 14 (FastMCP with RBAC and filtered tools/list)
+uv run step14
+
+# Test with test scripts
+./test_step12.sh
+uv run python test_step13.py
+uv run python test_step14.py
+```
+
+Test users for per-tool RBAC:
+- `mcp-admin` / `admin123` - has `mcp:tools` (all tools)
+- `mcp-user` / `user123` - has `mcp:tools:echo`, `mcp:tools:time`, `mcp:tools:calc`
+- `mcp-guest` / `guest123` - has only `mcp:tools:echo`
+- `mcp-readonly` / `readonly123` - has only `mcp:read` (no tools)
+
 ## Dependencies
 
 - FastAPI
 - PyJWT
 - cryptography
 - uvicorn
+- FastMCP (for step 13)
 
 The project uses `uv` for dependency management with `pyproject.toml` configuration.

@@ -20,24 +20,40 @@
       "fullScopeAllowed": false,
       "assignedScopes": {
         "default": ["echo-mcp-server-audience"],
-        "optional": ["mcp:read", "mcp:tools", "mcp:prompts"]
+        "optional": ["mcp:read", "mcp:tools", "mcp:prompts", "mcp:tools:echo", "mcp:tools:time", "mcp:tools:calc", "mcp:tools:admin"]
       }
     },
     {
       "clientId": "echo-mcp-server",
       "name": "Echo MCP Server",
-      "type": "confidential", 
+      "type": "confidential",
       "enabled": true,
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "tokenExchange": {
         "enabled": true
       },
-      "clientSecret": "PLOs4j6ti521kb5ZVVVwi5GWi9eDYTwq",      
+      "clientSecret": "PLOs4j6ti521kb5ZVVVwi5GWi9eDYTwq",
       "roles": [
         {
           "name": "tools",
-          "description": "Can call tools"
+          "description": "Can call all tools (hierarchical access)"
+        },
+        {
+          "name": "tools-echo",
+          "description": "Can call the echo tool"
+        },
+        {
+          "name": "tools-time",
+          "description": "Can call the get_time tool"
+        },
+        {
+          "name": "tools-calc",
+          "description": "Can call the calculate tool"
+        },
+        {
+          "name": "tools-admin",
+          "description": "Can call the system_info tool (admin only)"
         },
         {
           "name": "prompts",
@@ -70,7 +86,7 @@
           }
         }
       ]
-    },    
+    },
     {
       "name": "mcp:read",
       "description": "Read access to MCP resources",
@@ -88,7 +104,7 @@
     },
     {
       "name": "mcp:tools",
-      "description": "Access to execute MCP tools",
+      "description": "Access to execute ALL MCP tools (hierarchical)",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -98,6 +114,66 @@
         {
           "client": "echo-mcp-server",
           "role": "tools"
+        }
+      ]
+    },
+    {
+      "name": "mcp:tools:echo",
+      "description": "Access to execute the echo tool",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "roles": [
+        {
+          "client": "echo-mcp-server",
+          "role": "tools-echo"
+        }
+      ]
+    },
+    {
+      "name": "mcp:tools:time",
+      "description": "Access to execute the get_time tool",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "roles": [
+        {
+          "client": "echo-mcp-server",
+          "role": "tools-time"
+        }
+      ]
+    },
+    {
+      "name": "mcp:tools:calc",
+      "description": "Access to execute the calculate tool",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "roles": [
+        {
+          "client": "echo-mcp-server",
+          "role": "tools-calc"
+        }
+      ]
+    },
+    {
+      "name": "mcp:tools:admin",
+      "description": "Access to execute the system_info tool (admin only)",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "roles": [
+        {
+          "client": "echo-mcp-server",
+          "role": "tools-admin"
         }
       ]
     },
@@ -141,7 +217,20 @@
       "password": "user123",
       "temporary": false,
       "clientRoles": {
-        "echo-mcp-server": ["tools", "read-only"]
+        "echo-mcp-server": ["tools-echo", "tools-time", "tools-calc", "read-only"]
+      }
+    },
+    {
+      "username": "mcp-guest",
+      "email": "guest@mcp.example.com",
+      "firstName": "MCP",
+      "lastName": "Guest",
+      "enabled": true,
+      "emailVerified": true,
+      "password": "guest123",
+      "temporary": false,
+      "clientRoles": {
+        "echo-mcp-server": ["tools-echo", "read-only"]
       }
     },
     {
@@ -158,4 +247,4 @@
       }
     }
   ]
-} 
+}
